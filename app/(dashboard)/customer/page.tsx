@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { signOut } from "next-auth/react";
 import {
   User, ShoppingCart, LogOut, Bell, Menu, X,
   ChevronRight, Clock, CheckCircle, XCircle, Truck,
@@ -618,7 +619,7 @@ export default function CustomerDashboard() {
         <div className="px-2 py-3 border-t border-white/10 flex-shrink-0">
           <div className="relative group">
             <button
-              onClick={() => { localStorage.removeItem("wisel_user"); window.location.href = "/"; }}
+              onClick={() => signOut({ redirectTo: "/login" })}
               className={`w-full flex items-center rounded-lg text-xs text-red-400 hover:bg-red-500/10 transition-colors py-2 px-2 gap-2
                 ${collapsed ? "lg:justify-center" : ""}`}
             >

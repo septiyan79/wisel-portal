@@ -1,11 +1,7 @@
-// =============================================================
-// FILE: app/login/page.tsx
-// Halaman login untuk customer / end user
-// =============================================================
-
 "use client";
 
-import { useState, useEffect } from "react";
+import { signIn } from "next-auth/react"
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Leaf, ArrowLeft, Loader2 } from "lucide-react";
 
@@ -18,39 +14,25 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Kalau sudah login, langsung redirect ke landing page
-  useEffect(() => {
-    const user = localStorage.getItem("wisel_user");
-    if (user) router.replace("/");
-  }, [router]);
-
-  // ── DUMMY LOGIN ─────────────────────────────────────────────
-  // Nanti bagian ini diganti dengan NextAuth signIn("deere")
-  // saat credentials John Deere sudah tersedia
+  
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+    e.preventDefault()
+    setError("")
+    setLoading(true)
 
-    // Simulasi network delay
-    await new Promise((r) => setTimeout(r, 1200));
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,   // handle redirect manually
+    })
 
-    // Dummy validation — ganti dengan auth asli nanti
-    if (email === "user@wisel.co.id" && password === "password123") {
-      localStorage.setItem(
-        "wisel_user",
-        JSON.stringify({
-          name: "Budi Santoso",
-          email: email,
-          role: "customer",
-        })
-      );
-      router.push("/");
+    if (result?.error) {
+      setError("Email atau password salah.")
+      setLoading(false)
     } else {
-      setError("Email atau password salah. Coba: user@wisel.co.id / password123");
-      setLoading(false);
+      router.push("/customer")
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
