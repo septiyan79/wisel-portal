@@ -2,18 +2,23 @@
 
 import { Bell, LogOut, ShoppingCart, Settings, HelpCircle, ChevronDown, Menu, X } from "lucide-react"
 import { signOut } from "next-auth/react"
+import { usePathname } from "next/navigation"
+import Link from "next/link"
 import { useState } from "react"
-import { CUSTOMER, NAV_ITEMS } from "@/data/customer"
+import { NAV_ITEMS } from "@/data/customer"
 
 interface DashboardNavbarProps {
-  activeTab: string
-  onNavSelect: (tabId: string) => void
+  customerAccount: string
+  customerName: string
 }
 
-export function DashboardNavbar({ activeTab, onNavSelect }: DashboardNavbarProps) {
+export function DashboardNavbar({ customerAccount, customerName }: DashboardNavbarProps) {
+  const pathname = usePathname()
   const [navSlideOpen, setNavSlideOpen] = useState(false)
   const [secondarySlideOpen, setSecondarySlideOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+
+  const initial = (customerName || customerAccount || "?").charAt(0).toUpperCase()
 
   return (
     <>
@@ -35,35 +40,30 @@ export function DashboardNavbar({ activeTab, onNavSelect }: DashboardNavbarProps
 
         <div className="px-4 py-4 border-b border-gray-100 flex items-center gap-3">
           <div className="w-9 h-9 bg-[#367C2B] rounded-full flex items-center justify-center shrink-0">
-            <span className="text-white text-sm font-black">{CUSTOMER.name.charAt(0)}</span>
+            <span className="text-white text-sm font-black">{initial}</span>
           </div>
           <div>
-            <p className="text-sm font-bold text-gray-900">{CUSTOMER.name}</p>
-            <p className="text-xs text-gray-500">{CUSTOMER.company}</p>
+            <p className="text-sm font-bold text-gray-900">{customerName}</p>
+            <p className="text-xs text-gray-500">{customerAccount}</p>
           </div>
         </div>
 
         <nav className="px-3 py-3 space-y-0.5 border-b border-gray-100">
           {NAV_ITEMS.map((item) => (
-            <button
+            <Link
               key={item.id}
-              onClick={() => { onNavSelect(item.id); setNavSlideOpen(false) }}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-semibold transition-colors ${activeTab === item.id
+              href={item.href}
+              onClick={() => setNavSlideOpen(false)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-semibold transition-colors ${
+                pathname.startsWith(item.href)
                   ? "bg-[#367C2B]/10 text-[#367C2B]"
                   : "text-gray-600 hover:bg-gray-50"
-                }`}
+              }`}
             >
               <item.icon size={16} />
               {item.label}
-            </button>
+            </Link>
           ))}
-          <a
-            href="/catalog"
-            className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-[#367C2B] hover:bg-gray-50 rounded transition-colors"
-          >
-            <ShoppingCart size={16} />
-            Order Parts
-          </a>
         </nav>
 
         <div className="px-3 py-3">
@@ -126,28 +126,25 @@ export function DashboardNavbar({ activeTab, onNavSelect }: DashboardNavbarProps
             {/* Desktop nav tabs */}
             <nav className="hidden md:flex items-center gap-1 ml-8">
               {NAV_ITEMS.map((item) => (
-                <button
+                <Link
                   key={item.id}
-                  onClick={() => onNavSelect(item.id)}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors border-b-2 ${activeTab === item.id
+                  href={item.href}
+                  className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors border-b-2 ${
+                    pathname.startsWith(item.href)
                       ? "border-[#367C2B] text-[#367C2B]"
                       : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
-                    }`}
+                  }`}
                 >
                   <item.icon size={15} />
                   {item.label}
-                </button>
+                </Link>
               ))}
             </nav>
 
             {/* Right side */}
             <div className="ml-auto flex items-center gap-1 md:gap-2">
 
-              {/* Desktop: Order Parts + Bell + User menu */}
-              <a href="/catalog" className="hidden md:flex items-center gap-2 bg-[#367C2B] hover:bg-[#2d6423] text-white text-xs font-bold px-3 py-2 rounded transition-colors">
-                <ShoppingCart size={13} />
-                Order Parts
-              </a>
+              {/* Desktop: Bell + User menu */}
               <button className="hidden md:flex p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors">
                 <Bell size={17} />
               </button>
@@ -158,9 +155,9 @@ export function DashboardNavbar({ activeTab, onNavSelect }: DashboardNavbarProps
                   className="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-gray-100 transition-colors"
                 >
                   <div className="w-7 h-7 bg-[#367C2B] rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs font-black">{CUSTOMER.name.charAt(0)}</span>
+                    <span className="text-white text-xs font-black">{initial}</span>
                   </div>
-                  <span className="text-sm font-semibold text-gray-700">{CUSTOMER.name.split(" ")[0]}</span>
+                  <span className="text-sm font-semibold text-gray-700">{(customerName || customerAccount).split(" ")[0]}</span>
                   <ChevronDown size={13} className="text-gray-400" />
                 </button>
                 {userMenuOpen && (
@@ -168,8 +165,8 @@ export function DashboardNavbar({ activeTab, onNavSelect }: DashboardNavbarProps
                     <div className="fixed inset-0 z-10" onClick={() => setUserMenuOpen(false)} />
                     <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded shadow-lg z-20">
                       <div className="px-4 py-3 border-b border-gray-100">
-                        <p className="text-sm font-bold text-gray-900">{CUSTOMER.name}</p>
-                        <p className="text-xs text-gray-500">{CUSTOMER.company}</p>
+                        <p className="text-sm font-bold text-gray-900">{customerName}</p>
+                        <p className="text-xs text-gray-500">{customerAccount}</p>
                       </div>
                       <button
                         onClick={() => signOut({ redirectTo: "/login" })}

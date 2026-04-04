@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,11 +11,63 @@ datasource db {
 }
 
 model User {
-  id              String   @id @default(cuid())
-  customerAccount String   @unique @db.VarChar(5)
-  email           String   @unique
+  id              String    @id @default(cuid())
+  customerAccount String    @unique
   password        String
-  role            String   @default("customer")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  role            String    @default("customer")
+  customer        Customer? @relation(fields: [customerAccount], references: [customerAccount])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Customer {
+  id              String        @id @default(cuid())
+  customerAccount String        @unique
+  customerName    String
+  user            User?
+  transactions    Transaction[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Unit {
+  id           String        @id @default(cuid())
+  deviceNumber String        @unique
+  serialNumber String?       @unique
+  fleetNumber  String?
+  transactions Transaction[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Transaction {
+  id              String    @id @default(cuid())
+  externalId      String?   @unique
+  source          String
+  isDeleted       Boolean   @default(false)
+  deletedAt       DateTime?
+  soNumber        String?
+  quotation       String?
+  poNumber        String?
+  partNumber      String?
+  axPartNumber    String?
+  partName        String?
+  qty             Int?
+  datePackingSlip DateTime?
+  unitPrice       Float?
+  totalPrice      Float?
+  customer        Customer? @relation(fields: [customerAccount], references: [customerAccount])
+  customerAccount String?
+  unit            Unit?     @relation(fields: [deviceNumber], references: [deviceNumber])
+  deviceNumber    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model SyncLog {
+  id        String   @id @default(cuid())
+  syncedAt  DateTime @default(now())
+  totalRows Int
+  status    String
+  note      String?
 }

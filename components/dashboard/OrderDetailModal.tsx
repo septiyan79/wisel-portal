@@ -1,76 +1,67 @@
-import { X, CheckCircle, XCircle, Truck, Clock, AlertCircle } from "lucide-react"
-import type { Order } from "@/data/customer"
-import { STATUS_MAP } from "@/data/customer"
+"use client"
+
+import { X } from "lucide-react"
+import type { TransactionRow } from "@/components/dashboard/OrdersTab"
 
 interface OrderDetailModalProps {
-  order: Order
+  transaction: TransactionRow
   onClose: () => void
 }
 
-export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
-  const s = STATUS_MAP[order.status]
-  const StatusIcon = s.icon
+function fmt(value: number | null | undefined, currency = true) {
+  if (value == null) return "—"
+  if (currency) return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value)
+  return value.toString()
+}
+
+function fmtDate(iso: string | null | undefined) {
+  if (!iso) return "—"
+  return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
+}
+
+export function OrderDetailModal({ transaction: t, onClose }: OrderDetailModalProps) {
+  const rows = [
+    { label: "SO Number",     value: t.soNumber     ?? "—", mono: true  },
+    { label: "Part Number",   value: t.partNumber   ?? "—", mono: true  },
+    { label: "AX Part No.",   value: t.axPartNumber ?? "—", mono: true  },
+    { label: "Nama Part",     value: t.partName     ?? "—", mono: false },
+    { label: "Qty",           value: t.qty != null ? `${t.qty} pcs` : "—", mono: false },
+    { label: "Harga Satuan",  value: fmt(t.unitPrice),  mono: false },
+    { label: "Total Harga",   value: fmt(t.totalPrice), mono: false },
+    { label: "Tgl Packing Slip", value: fmtDate(t.datePackingSlip), mono: false },
+    { label: "No. Unit",      value: t.deviceNumber ?? "—", mono: true  },
+    { label: "Akun Customer", value: t.customerAccount ?? "—", mono: true },
+  ]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 font-[Plus_Jakarta_Sans,Segoe_UI,sans-serif]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h3 className="font-bold text-gray-900">Detail Order</h3>
+          <h3 className="font-bold text-gray-900">Detail Transaksi</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <X size={18} />
           </button>
         </div>
 
-        <div className="px-6 py-5 space-y-5">
-          {/* Status banner */}
-          <div className={`flex items-center gap-3 p-4 rounded-xl ${
-            order.status === "selesai"    ? "bg-green-50"  :
-            order.status === "dikirim"    ? "bg-purple-50" :
-            order.status === "dibatalkan" ? "bg-red-50"    : "bg-blue-50"
-          }`}>
-            <StatusIcon size={20} className={s.iconColor} />
-            <div>
-              <p className={`text-sm font-bold ${s.iconColor}`}>{s.label}</p>
-              {order.note && (
-                <p className="text-xs text-gray-500 mt-0.5">{order.note}</p>
-              )}
+        <div className="px-6 py-5 space-y-3 max-h-[70vh] overflow-y-auto">
+          {rows.map((row) => (
+            <div key={row.label} className="flex items-start justify-between gap-4">
+              <span className="text-xs text-gray-500 shrink-0 w-32">{row.label}</span>
+              <span className={`text-xs font-semibold text-gray-900 text-right ${row.mono ? "font-mono" : ""}`}>
+                {row.value}
+              </span>
             </div>
-          </div>
+          ))}
+        </div>
 
-          {/* Info */}
-          <div className="space-y-3">
-            {[
-              { label: "Order ID",   value: order.id,    mono: true },
-              { label: "Tanggal",    value: order.date,  mono: false },
-              { label: "Parts",      value: order.parts, mono: false },
-              { label: "Jumlah",     value: `${order.qty} pcs`, mono: false },
-              { label: "Total",      value: order.total, mono: false },
-              ...(order.estimasi ? [{ label: "Estimasi tiba", value: order.estimasi, mono: false }] : []),
-            ].map((row) => (
-              <div key={row.label} className="flex items-start justify-between gap-4">
-                <span className="text-xs text-gray-500 flex-shrink-0 w-28">{row.label}</span>
-                <span className={`text-xs font-semibold text-gray-900 text-right ${row.mono ? "font-mono" : ""}`}>
-                  {row.value}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Tombol aksi */}
-          <div className="flex gap-3 pt-2">
-            <button
-              onClick={onClose}
-              className="flex-1 py-2.5 text-sm font-semibold border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              Tutup
-            </button>
-            {order.status === "selesai" && (
-              <button className="flex-1 py-2.5 text-sm font-semibold bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors">
-                Pesan Lagi
-              </button>
-            )}
-          </div>
+        <div className="px-6 py-4 border-t border-gray-100">
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 text-sm font-semibold border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            Tutup
+          </button>
         </div>
       </div>
     </div>

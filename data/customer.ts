@@ -23,6 +23,7 @@ export type DashboardNavItem = {
   id: string
   label: string
   icon: ElementType
+  href: string
 }
 
 export const CUSTOMER = {
@@ -107,6 +108,6 @@ export const STATUS_MAP: Record<string, StatusConfig> = {
 }
 
 export const NAV_ITEMS: DashboardNavItem[] = [
-  { id: "orders",  label: "Riwayat Order", icon: ShoppingCart },
-  { id: "profile", label: "Profil Saya",   icon: User },
+  { id: "transactions", label: "Riwayat Transaksi", icon: ShoppingCart, href: "/transactions" },
+  { id: "profile",      label: "Profil Saya",        icon: User,         href: "/profile" },
 ]

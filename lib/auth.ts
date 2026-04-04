@@ -14,7 +14,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!credentials?.customerAccount || !credentials?.password) return null
 
         const user = await prisma.user.findUnique({
-          where: { customerAccount: credentials.customerAccount as string }
+          where: { customerAccount: credentials.customerAccount as string },
         })
 
         if (!user) return null
@@ -26,7 +26,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!isValid) return null
 
-        return user
+        const customer = await prisma.customer.findUnique({
+          where: { customerAccount: user.customerAccount },
+          select: { customerName: true },
+        })
+
+        return { ...user, customerName: customer?.customerName ?? user.customerAccount }
       }
     })
   ],
@@ -36,14 +41,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     jwt({ token, user }) {
       if (user) {
-        token.id = user.id
-        token.role = (user as { role: string }).role
+        const u = user as {
+          id: string
+          role: string
+          customerAccount: string
+          customerName?: string
+        }
+        token.id = u.id
+        token.role = u.role
+        token.customerAccount = u.customerAccount
+        token.customerName = u.customerName ?? u.customerAccount
       }
       return token
     },
     session({ session, token }) {
-      session.user.id = token.id as string
-      session.user.role = token.role as string
+      session.user.id = token.id
+      session.user.role = token.role
+      session.user.customerAccount = token.customerAccount
+      session.user.customerName = token.customerName ?? token.customerAccount ?? ""
       return session
     },
   },

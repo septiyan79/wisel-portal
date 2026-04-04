@@ -30,7 +30,7 @@ export default function LoginPage() {
       setError("Email atau password salah.")
       setLoading(false)
     } else {
-      router.push("/customer")
+      router.push("/transactions")
     }
   }
 
