@@ -1,55 +1,31 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader"
+import { DashboardNavbar } from "@/components/dashboard/DashboardNavbar"
 import { OrdersTab } from "@/components/dashboard/OrdersTab"
 import { ProfileTab } from "@/components/dashboard/ProfileTab"
 
-export default function CustomerDashboard() {
-  const [activeTab, setActiveTab]   = useState("orders")
-  const [collapsed, setCollapsed]   = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
+const TAB_TITLES: Record<string, string> = {
+  orders:  "Riwayat Order",
+  profile: "Profil Saya",
+}
 
-  const handleToggleSidebar = () => {
-    if (window.innerWidth >= 1024) {
-      setCollapsed((prev) => !prev)
-    } else {
-      setMobileOpen(true)
-    }
-  }
+export default function CustomerDashboard() {
+  const [activeTab, setActiveTab] = useState("orders")
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-[#f0f0f0]">
+      <DashboardNavbar activeTab={activeTab} onNavSelect={setActiveTab} />
 
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 z-20 lg:hidden"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
-      <DashboardSidebar
-        activeTab={activeTab}
-        collapsed={collapsed}
-        mobileOpen={mobileOpen}
-        onNavSelect={setActiveTab}
-        onMobileClose={() => setMobileOpen(false)}
-      />
-
-      <main className={`flex-1 flex flex-col min-h-screen transition-all duration-200 ${collapsed ? "lg:ml-16" : "lg:ml-60"}`}>
-        <DashboardHeader
-          activeTab={activeTab}
-          collapsed={collapsed}
-          onToggleSidebar={handleToggleSidebar}
-          onOpenMobile={() => setMobileOpen(true)}
-        />
-
-        <div className="flex-1 p-5">
-          {activeTab === "orders"  && <OrdersTab />}
-          {activeTab === "profile" && <ProfileTab />}
+      <main className="max-w-6xl mx-auto px-4 md:px-6 py-6">
+        {/* Page title */}
+        <div className="mb-5">
+          <h1 className="text-xl font-black text-gray-900">{TAB_TITLES[activeTab]}</h1>
+          <div className="mt-1 h-0.5 w-10 bg-[#FFDE00]" />
         </div>
+
+        {activeTab === "orders"  && <OrdersTab />}
+        {activeTab === "profile" && <ProfileTab />}
       </main>
     </div>
   )

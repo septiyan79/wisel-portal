@@ -30,7 +30,7 @@ export function OrdersTab() {
       {/* Banner order aktif */}
       {activeOrders.length > 0 && (
         <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 flex items-center gap-4">
-          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center shrink-0">
             <Truck size={18} className="text-purple-600" />
           </div>
           <div className="flex-1 min-w-0">
@@ -43,7 +43,7 @@ export function OrdersTab() {
           </div>
           <button
             onClick={() => setSelectedOrder(activeOrders[0])}
-            className="text-xs font-semibold text-purple-700 hover:text-purple-900 flex items-center gap-1 flex-shrink-0"
+            className="text-xs font-semibold text-purple-700 hover:text-purple-900 flex items-center gap-1 shrink-0"
           >
             Lihat <ChevronRight size={13} />
           </button>
@@ -80,7 +80,7 @@ export function OrdersTab() {
             onClick={() => setFilterStatus(f.value)}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
               filterStatus === f.value
-                ? "bg-green-600 text-white"
+                ? "bg-[#367C2B] text-white"
                 : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300"
             }`}
           >
@@ -160,7 +160,7 @@ export function OrdersTab() {
                     <td className="px-5 py-4 whitespace-nowrap">
                       <p className="text-xs font-mono text-gray-500">{order.id}</p>
                     </td>
-                    <td className="px-5 py-4 max-w-[200px]">
+                    <td className="px-5 py-4 max-w-50">
                       <p className="text-sm font-semibold text-gray-900 truncate">{order.parts}</p>
                       {order.estimasi && (
                         <p className="text-xs text-purple-600 mt-0.5 whitespace-nowrap">Tiba: {order.estimasi}</p>
@@ -205,7 +205,7 @@ export function OrdersTab() {
                 <button
                   key={n}
                   className={`w-7 h-7 text-xs rounded-lg font-semibold transition-colors ${
-                    n === 1 ? "bg-green-600 text-white" : "text-gray-500 hover:bg-gray-100"
+                    n === 1 ? "bg-[#367C2B] text-white" : "text-gray-500 hover:bg-gray-100"
                   }`}
                 >
                   {n}

@@ -28,7 +28,7 @@ export function ProfileTab() {
 
       {/* Avatar + nama */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6 flex items-center gap-5">
-        <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+        <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center shrink-0">
           <span className="text-green-700 text-2xl font-black">{form.name.charAt(0)}</span>
         </div>
         <div className="flex-1 min-w-0">
@@ -38,7 +38,7 @@ export function ProfileTab() {
         </div>
         <button
           onClick={() => setEditing(!editing)}
-          className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-colors flex-shrink-0 ${
+          className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-colors shrink-0 ${
             editing
               ? "bg-gray-100 text-gray-600 hover:bg-gray-200"
               : "bg-green-50 text-green-700 hover:bg-green-100"
@@ -101,7 +101,7 @@ export function ProfileTab() {
         {editing && (
           <button
             onClick={handleSave}
-            className="mt-5 flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors"
+            className="mt-5 flex items-center gap-2 bg-[#367C2B] hover:bg-[#2d6423] text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors"
           >
             <Save size={14} /> Simpan Perubahan
           </button>
