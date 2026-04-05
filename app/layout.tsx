@@ -17,6 +17,9 @@ const barlow = Barlow({
 export const metadata: Metadata = {
   title: "Wisel — Authorized John Deere Dealer",
   description: "PT Wahana Inti Selaras, distributor resmi alat pertanian dan perkebunan di Indonesia.",
+  icons: {
+    icon: '/wisel.png',
+  },
 };
 
 export default function RootLayout({

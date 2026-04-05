@@ -16,6 +16,8 @@ export default async function TransactionsPage() {
     select: {
       id: true,
       soNumber: true,
+      quotation: true,
+      poNumber: true,
       partNumber: true,
       axPartNumber: true,
       partName: true,

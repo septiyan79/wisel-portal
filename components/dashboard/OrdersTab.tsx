@@ -1,12 +1,16 @@
 "use client"
 
 import { useState } from "react"
-import { Package, Eye } from "lucide-react"
+import { Package, Eye, Plus, Pencil, Trash2 } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { OrderDetailModal } from "./OrderDetailModal"
+import { TransactionFormModal } from "./TransactionFormModal"
 
 export type TransactionRow = {
   id: string
   soNumber: string | null
+  quotation: string | null
+  poNumber: string | null
   partNumber: string | null
   axPartNumber: string | null
   partName: string | null
@@ -42,8 +46,12 @@ function fmtDate(iso: string | null | undefined) {
 }
 
 export function OrdersTab({ transactions }: OrdersTabProps) {
-  const [selected, setSelected] = useState<TransactionRow | null>(null)
-  const [search, setSearch] = useState("")
+  const router = useRouter()
+  const [selected, setSelected]   = useState<TransactionRow | null>(null)
+  const [editing, setEditing]     = useState<TransactionRow | null>(null)
+  const [adding, setAdding]       = useState(false)
+  const [deleting, setDeleting]   = useState<string | null>(null)
+  const [search, setSearch]       = useState("")
 
   const filtered = transactions.filter((t) => {
     if (!search) return true
@@ -56,23 +64,58 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
     )
   })
 
+  function handleSaved() {
+    setAdding(false)
+    setEditing(null)
+    router.refresh()
+  }
+
+  async function handleDelete(id: string) {
+    setDeleting(id)
+    await fetch(`/api/transactions/${id}`, { method: "DELETE" })
+    setDeleting(null)
+    router.refresh()
+  }
+
   return (
     <div className="space-y-5">
       {selected && (
         <OrderDetailModal transaction={selected} onClose={() => setSelected(null)} />
       )}
+      {(adding || editing) && (
+        <TransactionFormModal
+          initial={editing}
+          onClose={() => { setAdding(false); setEditing(null) }}
+          onSaved={handleSaved}
+        />
+      )}
 
       {/* Stat ringkasan */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {[
-          { label: "Total Transaksi", value: transactions.length,                              color: "text-gray-900",  bg: "bg-gray-50" },
-          { label: "Bulan Ini",       value: transactions.filter((t) => {
-            if (!t.datePackingSlip) return false
-            const d = new Date(t.datePackingSlip)
-            const now = new Date()
-            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-          }).length, color: "text-green-700", bg: "bg-green-50" },
-          { label: "Total Nilai",     value: fmt(transactions.reduce((s, t) => s + (t.totalPrice ?? 0), 0)), color: "text-blue-700", bg: "bg-blue-50" },
+          {
+            label: "Total Transaksi",
+            value: transactions.length,
+            color: "text-gray-900",
+            bg: "bg-gray-50",
+          },
+          {
+            label: "Bulan Ini",
+            value: transactions.filter((t) => {
+              if (!t.datePackingSlip) return false
+              const d = new Date(t.datePackingSlip)
+              const now = new Date()
+              return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+            }).length,
+            color: "text-green-700",
+            bg: "bg-green-50",
+          },
+          {
+            label: "Total Nilai",
+            value: fmt(transactions.reduce((s, t) => s + (t.totalPrice ?? 0), 0)),
+            color: "text-blue-700",
+            bg: "bg-blue-50",
+          },
         ].map((s) => (
           <div key={s.label} className={`${s.bg} rounded-xl p-4 border border-gray-100`}>
             <p className={`text-2xl font-black ${s.color} truncate`}>{s.value}</p>
@@ -81,15 +124,22 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
         ))}
       </div>
 
-      {/* Search */}
-      <div>
+      {/* Toolbar: search + tambah */}
+      <div className="flex items-center gap-3 flex-wrap">
         <input
           type="text"
           placeholder="Cari SO Number, part, atau unit..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full sm:w-72 px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#367C2B] bg-white"
+          className="flex-1 min-w-48 sm:max-w-72 px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#367C2B] bg-white"
         />
+        <button
+          onClick={() => setAdding(true)}
+          className="flex items-center gap-2 bg-[#367C2B] hover:bg-[#2d6423] text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors shrink-0"
+        >
+          <Plus size={15} />
+          Tambah
+        </button>
       </div>
 
       {/* Empty state */}
@@ -99,6 +149,14 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
           <p className="text-sm text-gray-400">
             {search ? "Tidak ada hasil untuk pencarian ini" : "Belum ada transaksi"}
           </p>
+          {!search && (
+            <button
+              onClick={() => setAdding(true)}
+              className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#367C2B] hover:underline"
+            >
+              <Plus size={14} /> Tambah transaksi pertama
+            </button>
+          )}
         </div>
       )}
 
@@ -128,8 +186,25 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
                   onClick={() => setSelected(t)}
                   className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
                 >
-                  <Eye size={13} /> Lihat Detail
+                  <Eye size={13} /> Detail
                 </button>
+                {t.source === "manual" && (
+                  <>
+                    <button
+                      onClick={() => setEditing(t)}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-800 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <Pencil size={13} /> Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(t.id)}
+                      disabled={deleting === t.id}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                    >
+                      <Trash2 size={13} /> Hapus
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ))}
@@ -157,6 +232,11 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
                   <tr key={t.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-5 py-4 whitespace-nowrap">
                       <p className="text-xs font-mono text-gray-500">{t.soNumber ?? "—"}</p>
+                      {t.source === "manual" && (
+                        <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded mt-0.5 inline-block">
+                          manual
+                        </span>
+                      )}
                     </td>
                     <td className="px-5 py-4 max-w-48">
                       <p className="text-sm font-semibold text-gray-900 truncate">{t.partName ?? "—"}</p>
@@ -177,13 +257,34 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
                       {t.deviceNumber ?? "—"}
                     </td>
                     <td className="px-5 py-4">
-                      <button
-                        onClick={() => setSelected(t)}
-                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Lihat detail"
-                      >
-                        <Eye size={14} />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setSelected(t)}
+                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Lihat detail"
+                        >
+                          <Eye size={14} />
+                        </button>
+                        {t.source === "manual" && (
+                          <>
+                            <button
+                              onClick={() => setEditing(t)}
+                              className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                              title="Edit"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(t.id)}
+                              disabled={deleting === t.id}
+                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                              title="Hapus"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
