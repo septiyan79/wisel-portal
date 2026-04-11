@@ -4,6 +4,13 @@ import { useState, useEffect } from "react"
 import { X, Loader2, Plus, Trash2 } from "lucide-react"
 import type { TransactionRow } from "./OrdersTab"
 
+type UnitOption = {
+  id: string
+  deviceNumber: string
+  model: string | null
+  fleetNumber: string | null
+}
+
 interface TransactionFormModalProps {
   initial?: TransactionRow | null
   onClose: () => void
@@ -40,7 +47,7 @@ const FIELDS: { key: keyof FormState; label: string; type: string; placeholder: 
   { key: "invoiceDate",  label: "Invoice Date",      type: "date",   placeholder: "" },
   { key: "unitPrice",    label: "Harga Satuan (Rp)", type: "number", placeholder: "0" },
   { key: "totalPrice",   label: "Total Harga (Rp)",  type: "number", placeholder: "Auto-hitung dari Qty × Satuan" },
-  { key: "deviceNumber", label: "No. Unit / Device", type: "text",   placeholder: "Opsional" },
+  // deviceNumber ditangani terpisah sebagai dropdown
 ]
 
 function toDateInput(iso: string | null | undefined) {
@@ -53,6 +60,14 @@ export function TransactionFormModal({ initial, onClose, onSaved }: TransactionF
   const [forms, setForms] = useState<FormState[]>([{ ...EMPTY }])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [units, setUnits] = useState<UnitOption[]>([])
+
+  useEffect(() => {
+    fetch("/api/units")
+      .then((r) => r.json())
+      .then((data: UnitOption[]) => setUnits(data))
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (initial) {
@@ -217,6 +232,33 @@ export function TransactionFormModal({ initial, onClose, onSaved }: TransactionF
                         />
                       </div>
                     ))}
+
+                    {/* Dropdown Unit */}
+                    <div className="col-span-2 sm:col-span-3">
+                      <label className="block text-xs font-semibold text-gray-500 mb-1.5">
+                        No. Unit / Device
+                      </label>
+                      <select
+                        value={form.deviceNumber}
+                        onChange={(e) =>
+                          setForms((prev) =>
+                            prev.map((f, i) =>
+                              i === index ? { ...f, deviceNumber: e.target.value } : f
+                            )
+                          )
+                        }
+                        className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#367C2B] focus:border-transparent bg-white"
+                      >
+                        <option value="">— Tidak ada / pilih unit —</option>
+                        {units.map((u) => (
+                          <option key={u.id} value={u.deviceNumber}>
+                            {u.deviceNumber}
+                            {u.model ? ` — ${u.model}` : ""}
+                            {u.fleetNumber ? ` (${u.fleetNumber})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>

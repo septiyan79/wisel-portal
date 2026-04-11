@@ -50,15 +50,6 @@ export async function POST(req: Request) {
       qty, invoiceDate, unitPrice, totalPrice, deviceNumber,
     } = item
 
-    // Jika ada deviceNumber, upsert Unit agar FK tidak gagal
-    if (deviceNumber) {
-      await prisma.unit.upsert({
-        where: { deviceNumber },
-        update: {},
-        create: { deviceNumber },
-      })
-    }
-
     const transaction = await prisma.transaction.create({
       data: {
         source: "manual",

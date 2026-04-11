@@ -24,14 +24,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     qty, invoiceDate, unitPrice, totalPrice, deviceNumber,
   } = body
 
-  if (deviceNumber) {
-    await prisma.unit.upsert({
-      where: { deviceNumber },
-      update: {},
-      create: { deviceNumber },
-    })
-  }
-
   const updated = await prisma.transaction.update({
     where: { id },
     data: {

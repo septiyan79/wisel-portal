@@ -15,6 +15,7 @@ export default async function DashboardLayout({
       <DashboardNavbar
         customerAccount={session.user.customerAccount}
         customerName={session.user.customerName}
+        role={session.user.role}
       />
       <main className="max-w-6xl mx-auto px-4 md:px-6 py-6">
         {children}

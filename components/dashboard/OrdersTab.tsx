@@ -5,6 +5,7 @@ import { Package, Eye, Plus, Pencil, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { OrderDetailModal } from "./OrderDetailModal"
 import { TransactionFormModal } from "./TransactionFormModal"
+import { ConfirmModal } from "./ConfirmModal"
 
 export type TransactionRow = {
   id: string
@@ -47,11 +48,12 @@ function fmtDate(iso: string | null | undefined) {
 
 export function OrdersTab({ transactions }: OrdersTabProps) {
   const router = useRouter()
-  const [selected, setSelected]   = useState<TransactionRow | null>(null)
-  const [editing, setEditing]     = useState<TransactionRow | null>(null)
-  const [adding, setAdding]       = useState(false)
-  const [deleting, setDeleting]   = useState<string | null>(null)
-  const [search, setSearch]       = useState("")
+  const [selected, setSelected]     = useState<TransactionRow | null>(null)
+  const [editing, setEditing]       = useState<TransactionRow | null>(null)
+  const [adding, setAdding]         = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState<TransactionRow | null>(null)
+  const [deleting, setDeleting]     = useState(false)
+  const [search, setSearch]         = useState("")
 
   const filtered = transactions.filter((t) => {
     if (!search) return true
@@ -70,10 +72,12 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
     router.refresh()
   }
 
-  async function handleDelete(id: string) {
-    setDeleting(id)
-    await fetch(`/api/transactions/${id}`, { method: "DELETE" })
-    setDeleting(null)
+  async function handleDelete() {
+    if (!confirmDelete) return
+    setDeleting(true)
+    await fetch(`/api/transactions/${confirmDelete.id}`, { method: "DELETE" })
+    setDeleting(false)
+    setConfirmDelete(null)
     router.refresh()
   }
 
@@ -87,6 +91,16 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
           initial={editing}
           onClose={() => { setAdding(false); setEditing(null) }}
           onSaved={handleSaved}
+        />
+      )}
+      {confirmDelete && (
+        <ConfirmModal
+          title="Hapus Transaksi?"
+          message={`Transaksi ${confirmDelete.soNumber ? `"${confirmDelete.soNumber}"` : "ini"} akan dihapus permanen dan tidak bisa dikembalikan.`}
+          confirmLabel="Ya, Hapus"
+          loading={deleting}
+          onConfirm={handleDelete}
+          onCancel={() => setConfirmDelete(null)}
         />
       )}
 
@@ -197,9 +211,8 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
                       <Pencil size={13} /> Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(t.id)}
-                      disabled={deleting === t.id}
-                      className="flex items-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                      onClick={() => setConfirmDelete(t)}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
                     >
                       <Trash2 size={13} /> Hapus
                     </button>
@@ -275,9 +288,8 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
                               <Pencil size={14} />
                             </button>
                             <button
-                              onClick={() => handleDelete(t.id)}
-                              disabled={deleting === t.id}
-                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                              onClick={() => setConfirmDelete(t)}
+                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                               title="Hapus"
                             >
                               <Trash2 size={14} />

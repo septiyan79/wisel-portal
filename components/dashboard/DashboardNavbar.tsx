@@ -5,15 +5,19 @@ import { signOut } from "next-auth/react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { useState } from "react"
-import { NAV_ITEMS } from "@/data/customer"
+import { NAV_ITEMS, ADMIN_NAV_ITEMS } from "@/data/customer"
+import { ConfirmModal } from "./ConfirmModal"
 
 interface DashboardNavbarProps {
   customerAccount: string
   customerName: string
+  role: string
 }
 
-export function DashboardNavbar({ customerAccount, customerName }: DashboardNavbarProps) {
+export function DashboardNavbar({ customerAccount, customerName, role }: DashboardNavbarProps) {
   const pathname = usePathname()
+  const navItems = role === "customer" ? NAV_ITEMS : ADMIN_NAV_ITEMS
+  const [confirmLogout, setConfirmLogout] = useState(false)
   const [navSlideOpen, setNavSlideOpen] = useState(false)
   const [secondarySlideOpen, setSecondarySlideOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -22,6 +26,17 @@ export function DashboardNavbar({ customerAccount, customerName }: DashboardNavb
 
   return (
     <>
+      {confirmLogout && (
+        <ConfirmModal
+          title="Keluar dari akun?"
+          message="Kamu akan keluar dari sesi ini dan diarahkan ke halaman login."
+          confirmLabel="Ya, Keluar"
+          confirmVariant="warning"
+          onConfirm={() => signOut({ redirectTo: "/login" })}
+          onCancel={() => setConfirmLogout(false)}
+        />
+      )}
+
       {/* ── Nav slide-in sidebar (top bar menu, mobile) ── */}
       {navSlideOpen && (
         <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setNavSlideOpen(false)} />
@@ -49,7 +64,7 @@ export function DashboardNavbar({ customerAccount, customerName }: DashboardNavb
         </div>
 
         <nav className="px-3 py-3 space-y-0.5 border-b border-gray-100">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <Link
               key={item.id}
               href={item.href}
@@ -68,7 +83,7 @@ export function DashboardNavbar({ customerAccount, customerName }: DashboardNavb
 
         <div className="px-3 py-3">
           <button
-            onClick={() => signOut({ redirectTo: "/login" })}
+            onClick={() => setConfirmLogout(true)}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
           >
             <LogOut size={16} />
@@ -125,7 +140,7 @@ export function DashboardNavbar({ customerAccount, customerName }: DashboardNavb
 
             {/* Desktop nav tabs */}
             <nav className="hidden md:flex items-center gap-1 ml-8">
-              {NAV_ITEMS.map((item) => (
+              {navItems.map((item) => (
                 <Link
                   key={item.id}
                   href={item.href}
@@ -157,7 +172,7 @@ export function DashboardNavbar({ customerAccount, customerName }: DashboardNavb
                   <div className="w-7 h-7 bg-[#367C2B] rounded-full flex items-center justify-center">
                     <span className="text-white text-xs font-black">{initial}</span>
                   </div>
-                  <span className="text-sm font-semibold text-gray-700">{(customerName || customerAccount).split(" ")[0]}</span>
+                  <span className="text-sm font-semibold text-gray-700">{customerName || customerAccount}</span>
                   <ChevronDown size={13} className="text-gray-400" />
                 </button>
                 {userMenuOpen && (
@@ -169,7 +184,7 @@ export function DashboardNavbar({ customerAccount, customerName }: DashboardNavb
                         <p className="text-xs text-gray-500">{customerAccount}</p>
                       </div>
                       <button
-                        onClick={() => signOut({ redirectTo: "/login" })}
+                        onClick={() => setConfirmLogout(true)}
                         className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
                       >
                         <LogOut size={14} />
