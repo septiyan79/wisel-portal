@@ -28,7 +28,7 @@ export function OrderDetailModal({ transaction: t, onClose }: OrderDetailModalPr
     { label: "Qty",           value: t.qty != null ? `${t.qty} pcs` : "—", mono: false },
     { label: "Harga Satuan",  value: fmt(t.unitPrice),  mono: false },
     { label: "Total Harga",   value: fmt(t.totalPrice), mono: false },
-    { label: "Tgl Packing Slip", value: fmtDate(t.datePackingSlip), mono: false },
+    { label: "Invoice Date", value: fmtDate(t.invoiceDate), mono: false },
     { label: "No. Unit",      value: t.deviceNumber ?? "—", mono: true  },
     { label: "Akun Customer", value: t.customerAccount ?? "—", mono: true },
   ]

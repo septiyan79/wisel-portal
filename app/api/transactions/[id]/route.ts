@@ -21,7 +21,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const body = await req.json()
   const {
     soNumber, quotation, poNumber, partNumber, axPartNumber, partName,
-    qty, datePackingSlip, unitPrice, totalPrice, deviceNumber,
+    qty, invoiceDate, unitPrice, totalPrice, deviceNumber,
   } = body
 
   if (deviceNumber) {
@@ -42,7 +42,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       axPartNumber:    axPartNumber    ?? null,
       partName:        partName        ?? null,
       qty:             qty != null ? Number(qty) : null,
-      datePackingSlip: datePackingSlip ? new Date(datePackingSlip) : null,
+      invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
       unitPrice:       unitPrice  != null ? Number(unitPrice)  : null,
       totalPrice:      totalPrice != null ? Number(totalPrice) : null,
       deviceNumber:    deviceNumber    || null,

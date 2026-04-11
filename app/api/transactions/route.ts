@@ -15,7 +15,7 @@ export async function GET() {
 
   const transactions = await prisma.transaction.findMany({
     where,
-    orderBy: { datePackingSlip: "desc" },
+    orderBy: { invoiceDate: "desc" },
     select: {
       id: true,
       soNumber: true,
@@ -23,7 +23,7 @@ export async function GET() {
       axPartNumber: true,
       partName: true,
       qty: true,
-      datePackingSlip: true,
+      invoiceDate: true,
       unitPrice: true,
       totalPrice: true,
       customerAccount: true,
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
   const body = await req.json()
   const {
     soNumber, quotation, poNumber, partNumber, axPartNumber, partName,
-    qty, datePackingSlip, unitPrice, totalPrice, deviceNumber,
+    qty, invoiceDate, unitPrice, totalPrice, deviceNumber,
   } = body
 
   // Jika ada deviceNumber, upsert Unit agar FK tidak gagal
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
       axPartNumber:    axPartNumber    || null,
       partName:        partName        || null,
       qty:             qty != null ? Number(qty) : null,
-      datePackingSlip: datePackingSlip ? new Date(datePackingSlip) : null,
+      invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
       unitPrice:       unitPrice  != null ? Number(unitPrice)  : null,
       totalPrice:      totalPrice != null ? Number(totalPrice) : null,
       deviceNumber:    deviceNumber    || null,

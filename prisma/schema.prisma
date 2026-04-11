@@ -35,6 +35,7 @@ model Unit {
   deviceNumber String        @unique
   serialNumber String?       @unique
   fleetNumber  String?
+  model        String?
   transactions Transaction[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -53,7 +54,8 @@ model Transaction {
   axPartNumber    String?
   partName        String?
   qty             Int?
-  datePackingSlip DateTime?
+  category        String?
+  invoiceDate     DateTime?
   unitPrice       Float?
   totalPrice      Float?
   customer        Customer? @relation(fields: [customerAccount], references: [customerAccount])

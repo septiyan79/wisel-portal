@@ -18,7 +18,7 @@ type FormState = {
   axPartNumber: string
   partName: string
   qty: string
-  datePackingSlip: string
+  invoiceDate: string
   unitPrice: string
   totalPrice: string
   deviceNumber: string
@@ -26,7 +26,7 @@ type FormState = {
 
 const EMPTY: FormState = {
   soNumber: "", quotation: "", poNumber: "", partNumber: "", axPartNumber: "", partName: "",
-  qty: "", datePackingSlip: "", unitPrice: "", totalPrice: "", deviceNumber: "",
+  qty: "", invoiceDate: "", unitPrice: "", totalPrice: "", deviceNumber: "",
 }
 
 function toDateInput(iso: string | null | undefined) {
@@ -50,7 +50,7 @@ export function TransactionFormModal({ initial, onClose, onSaved }: TransactionF
         axPartNumber:    initial.axPartNumber    ?? "",
         partName:        initial.partName        ?? "",
         qty:             initial.qty != null ? String(initial.qty) : "",
-        datePackingSlip: toDateInput(initial.datePackingSlip),
+        invoiceDate: toDateInput(initial.invoiceDate),
         unitPrice:       initial.unitPrice  != null ? String(initial.unitPrice)  : "",
         totalPrice:      initial.totalPrice != null ? String(initial.totalPrice) : "",
         deviceNumber:    initial.deviceNumber ?? "",
@@ -89,7 +89,7 @@ export function TransactionFormModal({ initial, onClose, onSaved }: TransactionF
       axPartNumber:    form.axPartNumber    || null,
       partName:        form.partName        || null,
       qty:             form.qty             ? Number(form.qty)        : null,
-      datePackingSlip: form.datePackingSlip || null,
+      invoiceDate: form.invoiceDate || null,
       unitPrice:       form.unitPrice       ? Number(form.unitPrice)  : null,
       totalPrice:      form.totalPrice      ? Number(form.totalPrice) : null,
       deviceNumber:    form.deviceNumber    || null,
@@ -123,7 +123,7 @@ export function TransactionFormModal({ initial, onClose, onSaved }: TransactionF
     { key: "axPartNumber",    label: "AX Part Number",    type: "text",   placeholder: "Opsional" },
     { key: "partName",        label: "Nama Part",         type: "text",   placeholder: "Contoh: Filter Oli Mesin" },
     { key: "qty",             label: "Qty",               type: "number", placeholder: "0" },
-    { key: "datePackingSlip", label: "Tgl Packing Slip",  type: "date",   placeholder: "" },
+    { key: "invoiceDate", label: "Invoice Date",  type: "date",   placeholder: "" },
     { key: "unitPrice",       label: "Harga Satuan (Rp)", type: "number", placeholder: "0" },
     { key: "totalPrice",      label: "Total Harga (Rp)",  type: "number", placeholder: "Auto-hitung dari Qty × Satuan" },
     { key: "deviceNumber",    label: "No. Unit / Device", type: "text",   placeholder: "Opsional" },

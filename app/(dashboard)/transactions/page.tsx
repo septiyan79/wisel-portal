@@ -12,7 +12,7 @@ export default async function TransactionsPage() {
 
   const raw = await prisma.transaction.findMany({
     where,
-    orderBy: { datePackingSlip: "desc" },
+    orderBy: { invoiceDate: "desc" },
     select: {
       id: true,
       soNumber: true,
@@ -22,7 +22,7 @@ export default async function TransactionsPage() {
       axPartNumber: true,
       partName: true,
       qty: true,
-      datePackingSlip: true,
+      invoiceDate: true,
       unitPrice: true,
       totalPrice: true,
       customerAccount: true,
@@ -33,7 +33,7 @@ export default async function TransactionsPage() {
 
   const transactions = raw.map((t) => ({
     ...t,
-    datePackingSlip: t.datePackingSlip?.toISOString() ?? null,
+    invoiceDate: t.invoiceDate?.toISOString() ?? null,
   }))
 
   return (

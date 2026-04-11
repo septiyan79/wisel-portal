@@ -15,7 +15,7 @@ export type TransactionRow = {
   axPartNumber: string | null
   partName: string | null
   qty: number | null
-  datePackingSlip: string | null
+  invoiceDate: string | null
   unitPrice: number | null
   totalPrice: number | null
   customerAccount: string | null
@@ -102,8 +102,8 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
           {
             label: "Bulan Ini",
             value: transactions.filter((t) => {
-              if (!t.datePackingSlip) return false
-              const d = new Date(t.datePackingSlip)
+              if (!t.invoiceDate) return false
+              const d = new Date(t.invoiceDate)
               const now = new Date()
               return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
             }).length,
@@ -172,7 +172,7 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
                     {t.partName ?? t.partNumber ?? "—"}
                   </p>
                 </div>
-                <span className="text-xs text-gray-400 shrink-0">{fmtDate(t.datePackingSlip)}</span>
+                <span className="text-xs text-gray-400 shrink-0">{fmtDate(t.invoiceDate)}</span>
               </div>
 
               <div className="flex items-center gap-4 text-xs text-gray-500">
@@ -222,7 +222,7 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Part</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Qty</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden md:table-cell">Total</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden lg:table-cell">Tgl Packing Slip</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden lg:table-cell">Invoice Date</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden lg:table-cell">No. Unit</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Aksi</th>
                 </tr>
@@ -251,7 +251,7 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
                       {fmt(t.totalPrice)}
                     </td>
                     <td className="px-5 py-4 text-xs text-gray-400 hidden lg:table-cell whitespace-nowrap">
-                      {fmtDate(t.datePackingSlip)}
+                      {fmtDate(t.invoiceDate)}
                     </td>
                     <td className="px-5 py-4 text-xs font-mono text-gray-500 hidden lg:table-cell">
                       {t.deviceNumber ?? "—"}
