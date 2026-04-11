@@ -47,13 +47,19 @@ export async function POST(req: Request) {
   for (const item of items) {
     const {
       soNumber, quotation, poNumber, partNumber, axPartNumber, partName,
-      qty, invoiceDate, unitPrice, totalPrice, deviceNumber,
+      qty, invoiceDate, unitPrice, totalPrice, deviceNumber, customerAccount,
     } = item
+
+    // Admin boleh pilih customer, customer hanya bisa atas nama diri sendiri
+    const resolvedAccount =
+      session.user.role !== "customer" && customerAccount
+        ? customerAccount
+        : session.user.customerAccount
 
     const transaction = await prisma.transaction.create({
       data: {
         source: "manual",
-        customerAccount: session.user.customerAccount,
+        customerAccount: resolvedAccount,
         soNumber:     soNumber     || null,
         quotation:    quotation    || null,
         poNumber:     poNumber     || null,

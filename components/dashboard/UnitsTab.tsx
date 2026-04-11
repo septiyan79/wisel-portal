@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Plus, Pencil, Trash2, Cpu, Loader2, X, Search } from "lucide-react"
 import { ConfirmModal } from "./ConfirmModal"
+import { Pagination } from "./Pagination"
 
 export type UnitRow = {
   id: string
@@ -161,6 +162,8 @@ export function UnitsTab({ units }: UnitsTabProps) {
   const [confirmDelete, setConfirmDelete] = useState<UnitRow | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [page, setPage]         = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   const filtered = units.filter((u) => {
     if (!search) return true
@@ -172,6 +175,8 @@ export function UnitsTab({ units }: UnitsTabProps) {
       u.model?.toLowerCase().includes(q)
     )
   })
+
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize)
 
   function handleSaved() {
     setAdding(false)
@@ -236,7 +241,7 @@ export function UnitsTab({ units }: UnitsTabProps) {
             type="text"
             placeholder="Cari device, serial, atau model..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1) }}
             className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#367C2B] bg-white"
           />
         </div>
@@ -292,7 +297,7 @@ export function UnitsTab({ units }: UnitsTabProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filtered.map((u) => (
+                {paginated.map((u) => (
                   <tr key={u.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-5 py-4">
                       <p className="text-sm font-bold text-gray-900 font-mono">{u.deviceNumber}</p>
@@ -329,9 +334,13 @@ export function UnitsTab({ units }: UnitsTabProps) {
               </tbody>
             </table>
           </div>
-          <div className="px-5 py-3.5 border-t border-gray-100">
-            <p className="text-xs text-gray-400">{filtered.length} unit ditampilkan</p>
-          </div>
+          <Pagination
+            total={filtered.length}
+            page={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       )}
     </div>

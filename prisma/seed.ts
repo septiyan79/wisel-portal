@@ -19,6 +19,19 @@ async function main() {
     create: { customerAccount: "W0001", password: hashed, role: "customer" },
   })
 
+  // ── Customer account 2 ───────────────────────────────────────
+  await prisma.customer.upsert({
+    where: { customerAccount: "W0002" },
+    update: {},
+    create: { customerAccount: "W0002", customerName: "CV Maju Bersama" },
+  })
+
+  await prisma.user.upsert({
+    where: { customerAccount: "W0002" },
+    update: {},
+    create: { customerAccount: "W0002", password: hashed, role: "customer" },
+  })
+
   // ── Admin account ─────────────────────────────────────────────
   // Customer record tetap dibutuhkan karena FK constraint di User
   await prisma.customer.upsert({
@@ -35,6 +48,7 @@ async function main() {
 
   console.log("Seed done:")
   console.log("  customer → W0001 / password123")
+  console.log("  customer → W0002 / password123")
   console.log("  admin    → ADMIN / password123")
 }
 

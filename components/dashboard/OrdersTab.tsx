@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { OrderDetailModal } from "./OrderDetailModal"
 import { TransactionFormModal } from "./TransactionFormModal"
 import { ConfirmModal } from "./ConfirmModal"
+import { Pagination } from "./Pagination"
 
 export type TransactionRow = {
   id: string
@@ -26,6 +27,7 @@ export type TransactionRow = {
 
 interface OrdersTabProps {
   transactions: TransactionRow[]
+  role: string
 }
 
 function fmt(value: number | null | undefined) {
@@ -46,7 +48,7 @@ function fmtDate(iso: string | null | undefined) {
   })
 }
 
-export function OrdersTab({ transactions }: OrdersTabProps) {
+export function OrdersTab({ transactions, role }: OrdersTabProps) {
   const router = useRouter()
   const [selected, setSelected]     = useState<TransactionRow | null>(null)
   const [editing, setEditing]       = useState<TransactionRow | null>(null)
@@ -54,6 +56,8 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
   const [confirmDelete, setConfirmDelete] = useState<TransactionRow | null>(null)
   const [deleting, setDeleting]     = useState(false)
   const [search, setSearch]         = useState("")
+  const [page, setPage]             = useState(1)
+  const [pageSize, setPageSize]     = useState(10)
 
   const filtered = transactions.filter((t) => {
     if (!search) return true
@@ -65,6 +69,8 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
       t.deviceNumber?.toLowerCase().includes(q)
     )
   })
+
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize)
 
   function handleSaved() {
     setAdding(false)
@@ -89,6 +95,7 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
       {(adding || editing) && (
         <TransactionFormModal
           initial={editing}
+          role={role}
           onClose={() => { setAdding(false); setEditing(null) }}
           onSaved={handleSaved}
         />
@@ -144,7 +151,7 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
           type="text"
           placeholder="Cari SO Number, part, atau unit..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setPage(1) }}
           className="flex-1 min-w-48 sm:max-w-72 px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#367C2B] bg-white"
         />
         <button
@@ -177,7 +184,7 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
       {/* Mobile: card list */}
       {filtered.length > 0 && (
         <div className="sm:hidden space-y-3">
-          {filtered.map((t) => (
+          {paginated.map((t) => (
             <div key={t.id} className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -241,7 +248,7 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filtered.map((t) => (
+                {paginated.map((t) => (
                   <tr key={t.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-5 py-4 whitespace-nowrap">
                       <p className="text-xs font-mono text-gray-500">{t.soNumber ?? "—"}</p>
@@ -304,14 +311,26 @@ export function OrdersTab({ transactions }: OrdersTabProps) {
             </table>
           </div>
 
-          <div className="flex items-center justify-between px-5 py-3.5 border-t border-gray-100">
-            <p className="text-xs text-gray-400">{filtered.length} transaksi ditampilkan</p>
-          </div>
+          <Pagination
+            total={filtered.length}
+            page={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       )}
 
       {filtered.length > 0 && (
-        <p className="sm:hidden text-xs text-gray-400 text-center">{filtered.length} transaksi ditampilkan</p>
+        <div className="sm:hidden bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <Pagination
+            total={filtered.length}
+            page={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        </div>
       )}
     </div>
   )

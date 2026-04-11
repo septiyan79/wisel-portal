@@ -11,8 +11,14 @@ type UnitOption = {
   fleetNumber: string | null
 }
 
+type CustomerOption = {
+  customerAccount: string
+  customerName: string
+}
+
 interface TransactionFormModalProps {
   initial?: TransactionRow | null
+  role: string
   onClose: () => void
   onSaved: () => void
 }
@@ -47,7 +53,6 @@ const FIELDS: { key: keyof FormState; label: string; type: string; placeholder: 
   { key: "invoiceDate",  label: "Invoice Date",      type: "date",   placeholder: "" },
   { key: "unitPrice",    label: "Harga Satuan (Rp)", type: "number", placeholder: "0" },
   { key: "totalPrice",   label: "Total Harga (Rp)",  type: "number", placeholder: "Auto-hitung dari Qty × Satuan" },
-  // deviceNumber ditangani terpisah sebagai dropdown
 ]
 
 function toDateInput(iso: string | null | undefined) {
@@ -55,19 +60,37 @@ function toDateInput(iso: string | null | undefined) {
   return iso.slice(0, 10)
 }
 
-export function TransactionFormModal({ initial, onClose, onSaved }: TransactionFormModalProps) {
+function isFormEmpty(form: FormState): boolean {
+  return Object.values(form).every((v) => v === "" || v === "0")
+}
+
+export function TransactionFormModal({ initial, role, onClose, onSaved }: TransactionFormModalProps) {
   const isEdit = !!initial
+  const isAdmin = role !== "customer"
+
   const [forms, setForms] = useState<FormState[]>([{ ...EMPTY }])
+  const [customerAccount, setCustomerAccount] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [units, setUnits] = useState<UnitOption[]>([])
+  const [customers, setCustomers] = useState<CustomerOption[]>([])
 
   useEffect(() => {
     fetch("/api/units")
       .then((r) => r.json())
       .then((data: UnitOption[]) => setUnits(data))
       .catch(() => {})
-  }, [])
+
+    if (isAdmin) {
+      fetch("/api/customers")
+        .then((r) => r.json())
+        .then((data: CustomerOption[]) => {
+          setCustomers(data)
+          if (data.length > 0) setCustomerAccount(data[0].customerAccount)
+        })
+        .catch(() => {})
+    }
+  }, [isAdmin])
 
   useEffect(() => {
     if (initial) {
@@ -84,10 +107,11 @@ export function TransactionFormModal({ initial, onClose, onSaved }: TransactionF
         totalPrice:   initial.totalPrice != null ? String(initial.totalPrice) : "",
         deviceNumber: initial.deviceNumber ?? "",
       }])
+      if (isAdmin && initial.customerAccount) setCustomerAccount(initial.customerAccount)
     } else {
       setForms([{ ...EMPTY }])
     }
-  }, [initial])
+  }, [initial, isAdmin])
 
   function setField(index: number, field: keyof FormState) {
     return (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -118,21 +142,37 @@ export function TransactionFormModal({ initial, onClose, onSaved }: TransactionF
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
+
+    // Validasi: item manapun tidak boleh sepenuhnya kosong
+    const emptyIndexes = forms
+      .map((f, i) => (isFormEmpty(f) ? i + 1 : null))
+      .filter((v): v is number => v !== null)
+
+    if (emptyIndexes.length > 0) {
+      setError(
+        emptyIndexes.length === 1
+          ? `Item #${emptyIndexes[0]} masih kosong. Isi minimal satu field atau hapus item tersebut.`
+          : `Item #${emptyIndexes.join(", #")} masih kosong. Isi minimal satu field atau hapus item tersebut.`
+      )
+      return
+    }
+
     setLoading(true)
 
     function toPayload(form: FormState) {
       return {
-        soNumber:     form.soNumber     || null,
-        quotation:    form.quotation    || null,
-        poNumber:     form.poNumber     || null,
-        partNumber:   form.partNumber   || null,
-        axPartNumber: form.axPartNumber || null,
-        partName:     form.partName     || null,
-        qty:          form.qty          ? Number(form.qty)       : null,
-        invoiceDate:  form.invoiceDate  || null,
-        unitPrice:    form.unitPrice    ? Number(form.unitPrice)  : null,
-        totalPrice:   form.totalPrice   ? Number(form.totalPrice) : null,
-        deviceNumber: form.deviceNumber || null,
+        soNumber:        form.soNumber     || null,
+        quotation:       form.quotation    || null,
+        poNumber:        form.poNumber     || null,
+        partNumber:      form.partNumber   || null,
+        axPartNumber:    form.axPartNumber || null,
+        partName:        form.partName     || null,
+        qty:             form.qty         ? Number(form.qty)        : null,
+        invoiceDate:     form.invoiceDate  || null,
+        unitPrice:       form.unitPrice   ? Number(form.unitPrice)  : null,
+        totalPrice:      form.totalPrice  ? Number(form.totalPrice) : null,
+        deviceNumber:    form.deviceNumber || null,
+        ...(isAdmin && { customerAccount }),
       }
     }
 
@@ -193,6 +233,24 @@ export function TransactionFormModal({ initial, onClose, onSaved }: TransactionF
               </div>
             )}
 
+            {/* Customer picker — admin only */}
+            {isAdmin && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-3">
+                <span className="text-xs font-bold text-amber-700 shrink-0">Atas nama:</span>
+                <select
+                  value={customerAccount}
+                  onChange={(e) => setCustomerAccount(e.target.value)}
+                  className="flex-1 px-3 py-2 text-sm border border-amber-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                >
+                  {customers.map((c) => (
+                    <option key={c.customerAccount} value={c.customerAccount}>
+                      {c.customerAccount} — {c.customerName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {forms.map((form, index) => (
               <div key={index} className="border border-gray-200 rounded-xl overflow-hidden">
                 {/* Card header */}
@@ -234,7 +292,7 @@ export function TransactionFormModal({ initial, onClose, onSaved }: TransactionF
                     ))}
 
                     {/* Dropdown Unit */}
-                    <div className="col-span-2 sm:col-span-3">
+                    <div className="col-span-1">
                       <label className="block text-xs font-semibold text-gray-500 mb-1.5">
                         No. Unit / Device
                       </label>
