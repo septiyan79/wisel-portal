@@ -40,37 +40,44 @@ export async function POST(req: Request) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const body = await req.json()
-  const {
-    soNumber, quotation, poNumber, partNumber, axPartNumber, partName,
-    qty, invoiceDate, unitPrice, totalPrice, deviceNumber,
-  } = body
+  // Support single object or array of objects
+  const items: typeof body[] = Array.isArray(body) ? body : [body]
 
-  // Jika ada deviceNumber, upsert Unit agar FK tidak gagal
-  if (deviceNumber) {
-    await prisma.unit.upsert({
-      where: { deviceNumber },
-      update: {},
-      create: { deviceNumber },
+  const results = []
+  for (const item of items) {
+    const {
+      soNumber, quotation, poNumber, partNumber, axPartNumber, partName,
+      qty, invoiceDate, unitPrice, totalPrice, deviceNumber,
+    } = item
+
+    // Jika ada deviceNumber, upsert Unit agar FK tidak gagal
+    if (deviceNumber) {
+      await prisma.unit.upsert({
+        where: { deviceNumber },
+        update: {},
+        create: { deviceNumber },
+      })
+    }
+
+    const transaction = await prisma.transaction.create({
+      data: {
+        source: "manual",
+        customerAccount: session.user.customerAccount,
+        soNumber:     soNumber     || null,
+        quotation:    quotation    || null,
+        poNumber:     poNumber     || null,
+        partNumber:   partNumber   || null,
+        axPartNumber: axPartNumber || null,
+        partName:     partName     || null,
+        qty:          qty != null ? Number(qty) : null,
+        invoiceDate:  invoiceDate ? new Date(invoiceDate) : null,
+        unitPrice:    unitPrice  != null ? Number(unitPrice)  : null,
+        totalPrice:   totalPrice != null ? Number(totalPrice) : null,
+        deviceNumber: deviceNumber || null,
+      },
     })
+    results.push(transaction)
   }
 
-  const transaction = await prisma.transaction.create({
-    data: {
-      source: "manual",
-      customerAccount: session.user.customerAccount,
-      soNumber:        soNumber        || null,
-      quotation:       quotation       || null,
-      poNumber:        poNumber        || null,
-      partNumber:      partNumber      || null,
-      axPartNumber:    axPartNumber    || null,
-      partName:        partName        || null,
-      qty:             qty != null ? Number(qty) : null,
-      invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
-      unitPrice:       unitPrice  != null ? Number(unitPrice)  : null,
-      totalPrice:      totalPrice != null ? Number(totalPrice) : null,
-      deviceNumber:    deviceNumber    || null,
-    },
-  })
-
-  return NextResponse.json(transaction, { status: 201 })
+  return NextResponse.json(results.length === 1 ? results[0] : results, { status: 201 })
 }
