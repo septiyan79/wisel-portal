@@ -1,12 +1,15 @@
 "use client"
 
-import { useState } from "react"
-import { Package, Eye, Plus, Pencil, Trash2 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Package, Eye, Plus, Pencil, Trash2, FileSpreadsheet } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { OrderDetailModal } from "./OrderDetailModal"
 import { TransactionFormModal } from "./TransactionFormModal"
 import { ConfirmModal } from "./ConfirmModal"
 import { Pagination } from "./Pagination"
+import { ImportModal } from "./ImportModal"
+
+type CustomerOption = { customerAccount: string; customerName: string }
 
 export type TransactionRow = {
   id: string
@@ -55,9 +58,20 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
   const [adding, setAdding]         = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<TransactionRow | null>(null)
   const [deleting, setDeleting]     = useState(false)
+  const [importing, setImporting]   = useState(false)
   const [search, setSearch]         = useState("")
   const [page, setPage]             = useState(1)
   const [pageSize, setPageSize]     = useState(10)
+  const [customers, setCustomers]   = useState<CustomerOption[]>([])
+
+  useEffect(() => {
+    if (role !== "customer") {
+      fetch("/api/customers")
+        .then((r) => r.json())
+        .then((d: CustomerOption[]) => setCustomers(d))
+        .catch(() => {})
+    }
+  }, [role])
 
   const filtered = transactions.filter((t) => {
     if (!search) return true
@@ -98,6 +112,15 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
           role={role}
           onClose={() => { setAdding(false); setEditing(null) }}
           onSaved={handleSaved}
+        />
+      )}
+      {importing && (
+        <ImportModal
+          type="transactions"
+          role={role}
+          customers={customers}
+          onClose={() => setImporting(false)}
+          onImported={() => { setImporting(false); router.refresh() }}
         />
       )}
       {confirmDelete && (
@@ -154,6 +177,13 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
           onChange={(e) => { setSearch(e.target.value); setPage(1) }}
           className="flex-1 min-w-48 sm:max-w-72 px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#367C2B] bg-white"
         />
+        <button
+          onClick={() => setImporting(true)}
+          className="flex items-center gap-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg transition-colors shrink-0"
+        >
+          <FileSpreadsheet size={15} />
+          Import Excel
+        </button>
         <button
           onClick={() => setAdding(true)}
           className="flex items-center gap-2 bg-[#367C2B] hover:bg-[#2d6423] text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors shrink-0"

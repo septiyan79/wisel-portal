@@ -2,9 +2,10 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Pencil, Trash2, Cpu, Loader2, X, Search } from "lucide-react"
+import { Plus, Pencil, Trash2, Cpu, Loader2, X, Search, FileSpreadsheet } from "lucide-react"
 import { ConfirmModal } from "./ConfirmModal"
 import { Pagination } from "./Pagination"
+import { ImportModal } from "./ImportModal"
 
 export type UnitRow = {
   id: string
@@ -162,6 +163,7 @@ export function UnitsTab({ units }: UnitsTabProps) {
   const [confirmDelete, setConfirmDelete] = useState<UnitRow | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [importing, setImporting] = useState(false)
   const [page, setPage]         = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
@@ -208,6 +210,13 @@ export function UnitsTab({ units }: UnitsTabProps) {
           onSaved={handleSaved}
         />
       )}
+      {importing && (
+        <ImportModal
+          type="units"
+          onClose={() => setImporting(false)}
+          onImported={() => { setImporting(false); router.refresh() }}
+        />
+      )}
       {confirmDelete && (
         <ConfirmModal
           title="Hapus Unit?"
@@ -245,6 +254,13 @@ export function UnitsTab({ units }: UnitsTabProps) {
             className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#367C2B] bg-white"
           />
         </div>
+        <button
+          onClick={() => setImporting(true)}
+          className="flex items-center gap-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg transition-colors shrink-0"
+        >
+          <FileSpreadsheet size={15} />
+          Import Excel
+        </button>
         <button
           onClick={() => setAdding(true)}
           className="flex items-center gap-2 bg-[#367C2B] hover:bg-[#2d6423] text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors shrink-0"
