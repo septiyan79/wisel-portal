@@ -30,7 +30,7 @@ export default function LoginPage() {
       setError("Email atau password salah.")
       setLoading(false)
     } else {
-      router.push("/transactions")
+      router.push("/dashboard")
     }
   }
 
@@ -40,7 +40,7 @@ export default function LoginPage() {
       {/* Back to home */}
       <div className="p-6">
         <a
-          href="/"
+          href="/landing"
           className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
         >
           <ArrowLeft size={15} />
@@ -139,36 +139,36 @@ export default function LoginPage() {
             </form>
 
             {/* Divider */}
-            <div className="flex items-center gap-3 my-5">
+            {/* <div className="flex items-center gap-3 my-5">
               <div className="flex-1 h-px bg-gray-100" />
               <span className="text-xs text-gray-400">atau masuk dengan</span>
               <div className="flex-1 h-px bg-gray-100" />
-            </div>
+            </div> */}
 
             {/* John Deere SSO — aktifkan nanti saat credentials tersedia */}
-            <button
+            {/* <button
               disabled
               className="w-full flex items-center justify-center gap-2.5 border border-gray-200 bg-gray-50 text-gray-400 text-sm font-semibold py-2.5 rounded-lg cursor-not-allowed"
               title="Akan aktif setelah integrasi John Deere selesai"
-            >
+            > */}
               {/* Logo John Deere placeholder */}
-              <div className="w-5 h-5 bg-yellow-400 rounded-sm flex items-center justify-center text-green-800 text-xs font-black">
+              {/* <div className="w-5 h-5 bg-yellow-400 rounded-sm flex items-center justify-center text-green-800 text-xs font-black">
                 JD
               </div>
               Masuk dengan John Deere
             </button>
             <p className="text-center text-xs text-gray-400 mt-2">
               Integrasi John Deere dalam proses pengerjaan
-            </p>
+            </p> */}
           </div>
 
           {/* Staff login link */}
-          <p className="text-center text-xs text-gray-400 mt-6">
+          {/* <p className="text-center text-xs text-gray-400 mt-6">
             Anda staff Wisel?{" "}
             <a href="/admin/login" className="text-gray-600 hover:text-gray-800 font-semibold underline">
               Login sebagai Staff
             </a>
-          </p>
+          </p> */}
         </div>
       </div>
     </div>

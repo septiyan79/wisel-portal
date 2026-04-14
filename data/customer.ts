@@ -1,4 +1,4 @@
-import { AlertCircle, Clock, Truck, CheckCircle, XCircle, ShoppingCart, User, Cpu } from "lucide-react"
+import { AlertCircle, Clock, Truck, CheckCircle, XCircle, ShoppingCart, Cpu, LayoutDashboard } from "lucide-react"
 import type { ElementType } from "react"
 
 export type Order = {
@@ -108,12 +108,12 @@ export const STATUS_MAP: Record<string, StatusConfig> = {
 }
 
 export const NAV_ITEMS: DashboardNavItem[] = [
-  { id: "transactions", label: "Riwayat Transaksi", icon: ShoppingCart, href: "/transactions" },
-  { id: "profile",      label: "Profil Saya",        icon: User,         href: "/profile" },
+  { id: "dashboard",    label: "Dashboard",  icon: LayoutDashboard, href: "/dashboard" },
+  { id: "transactions", label: "Transaksi",  icon: ShoppingCart,    href: "/transactions" },
 ]
 
 export const ADMIN_NAV_ITEMS: DashboardNavItem[] = [
-  { id: "transactions", label: "Riwayat Transaksi", icon: ShoppingCart, href: "/transactions" },
-  { id: "units",        label: "Master Unit",        icon: Cpu,          href: "/units" },
-  { id: "profile",      label: "Profil Saya",        icon: User,         href: "/profile" },
+  { id: "dashboard",    label: "Dashboard",  icon: LayoutDashboard, href: "/dashboard" },
+  { id: "transactions", label: "Transaksi",  icon: ShoppingCart,    href: "/transactions" },
+  { id: "units",        label: "Master Unit", icon: Cpu,             href: "/units" },
 ]

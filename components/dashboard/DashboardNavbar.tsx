@@ -81,7 +81,15 @@ export function DashboardNavbar({ customerAccount, customerName, role }: Dashboa
           ))}
         </nav>
 
-        <div className="px-3 py-3">
+        <div className="px-3 py-3 space-y-0.5">
+          <Link
+            href="/profile"
+            onClick={() => setNavSlideOpen(false)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            <Settings size={16} />
+            Profil Saya
+          </Link>
           <button
             onClick={() => setConfirmLogout(true)}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
@@ -134,7 +142,7 @@ export function DashboardNavbar({ customerAccount, customerName, role }: Dashboa
               </div>
               <div className="sm:block">
                 <p className="text-base md:text-lg font-black text-gray-900 leading-none tracking-tight">WISEL</p>
-                <p className="text-[10px] md:text-[11px] text-[#367C2B] font-semibold tracking-widest mt-0.5">PARTS PORTAL</p>
+                <p className="text-[10px] md:text-[11px] text-[#367C2B] font-semibold tracking-widest mt-0.5">PORTAL</p>
               </div>
             </div>
 
@@ -183,6 +191,14 @@ export function DashboardNavbar({ customerAccount, customerName, role }: Dashboa
                         <p className="text-sm font-bold text-gray-900">{customerName}</p>
                         <p className="text-xs text-gray-500">{customerAccount}</p>
                       </div>
+                      <Link
+                        href="/profile"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <Settings size={14} />
+                        Profil Saya
+                      </Link>
                       <button
                         onClick={() => setConfirmLogout(true)}
                         className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
