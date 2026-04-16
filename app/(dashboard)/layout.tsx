@@ -17,7 +17,7 @@ export default async function DashboardLayout({
         customerName={session.user.customerName}
         role={session.user.role}
       />
-      <main className="max-w-6xl mx-auto px-4 md:px-6 py-6">
+      <main className="max-w-screen-2xl mx-auto px-2 md:px-3 py-6">
         {children}
       </main>
     </div>

@@ -1,6 +1,7 @@
 "use client"
 
 import { Bell, LogOut, ShoppingCart, Settings, HelpCircle, ChevronDown, Menu, X } from "lucide-react"
+import Image from "next/image"
 import { signOut } from "next-auth/react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
@@ -132,18 +133,23 @@ export function DashboardNavbar({ customerAccount, customerName, role }: Dashboa
       <header className="sticky top-0 z-30 shadow-md font-(--font-barlow)">
 
         {/* ── Top bar ── */}
-        <div className="bg-white border-b border-gray-200">
-          <div className="flex items-center h-14 md:h-20 px-4 md:px-6">
+        <div className="bg-white">
+          <div className="flex items-center h-14 md:h-20 pr-4 md:pr-6">
 
-            {/* Yellow accent + Logo */}
-            <div className="flex items-center gap-3 md:gap-4 border-l-4 border-[#FFDE00] pl-3 md:pl-4">
-              <div className="w-7 h-7 md:w-10 md:h-10 bg-[#367C2B] rounded flex items-center justify-center shrink-0">
-                <span className="text-white font-black text-xs md:text-sm">W</span>
+            {/* Green-yellow vertical accent + John Deere logo */}
+            <div className="flex items-center self-stretch gap-6 md:gap-8 w-44 md:w-60 shrink-0">
+              <div className="flex self-stretch shrink-0">
+                <div className="w-3 md:w-4 bg-[#367C2B]" />
+                <div className="w-1 md:w-1.5 bg-[#FFDE00]" />
               </div>
-              <div className="sm:block">
-                <p className="text-base md:text-lg font-black text-gray-900 leading-none tracking-tight">WISEL</p>
-                <p className="text-[10px] md:text-[11px] text-[#367C2B] font-semibold tracking-widest mt-0.5">PORTAL</p>
-              </div>
+              <Image
+                src="/John Deere Logo.png"
+                alt="John Deere"
+                width={160}
+                height={36}
+                className="h-8 md:h-11 w-auto object-contain"
+                priority
+              />
             </div>
 
             {/* Desktop nav tabs */}
@@ -223,13 +229,21 @@ export function DashboardNavbar({ customerAccount, customerName, role }: Dashboa
         </div>
 
         {/* ── Secondary bar ── */}
-        <div className="bg-[#3d3d3d] px-4 md:px-6 py-1.5 md:py-3 flex items-center gap-4">
+        <div className="bg-[#3d3d3d] px-4 md:px-6 py-2.5 md:py-4 flex items-center gap-4">
 
           {/* New Part Search — mobile left */}
           <button className="md:hidden flex items-center gap-2 border-0 md:border-2 border-white text-white text-sm font-semibold px-3 py-1 hover:bg-white/10 transition-colors">
             <ShoppingCart size={14} />
             New Part Search
           </button>
+
+          {/* Spacer: logo container (w-60) + stripe (22px) + ml-8 (32px) - px-6 (24px) = ~270px */}
+          <div className="hidden md:block w-14 shrink-0" />
+
+          {/* Text aligned with nav items */}
+          <p className="hidden md:block text-white/80 text-sm font-semibold tracking-widest uppercase">
+            PT Wahana Inti Selaras
+          </p>
 
           {/* Right side */}
           <div className="ml-auto flex items-center gap-1">

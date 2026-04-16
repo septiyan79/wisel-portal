@@ -6,14 +6,17 @@ export default auth((req) => {
 
   const isAuthPage = pathname.startsWith("/login")
   const isDashboard =
-    pathname.startsWith("/customer") || pathname.startsWith("/transactions")
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/transactions") ||
+    pathname.startsWith("/units") ||
+    pathname.startsWith("/profile")
 
   if (isDashboard && !isLoggedIn) {
     return Response.redirect(new URL("/login", req.nextUrl))
   }
 
   if (isAuthPage && isLoggedIn) {
-    return Response.redirect(new URL("/customer", req.nextUrl))
+    return Response.redirect(new URL("/dashboard", req.nextUrl))
   }
 })
 
