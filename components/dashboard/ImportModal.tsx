@@ -35,6 +35,7 @@ const TRANSACTION_TEMPLATE = [
     "Part Number": "RE504836",
     "AX Part Number": "",
     "Nama Part": "Filter Oli Mesin",
+    "Category": "Repair",
     "Qty": 5,
     "Invoice Date": "2025-04-01",
     "Harga Satuan": 240000,

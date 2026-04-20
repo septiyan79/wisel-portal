@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback } from "react"
 import { signOut } from "next-auth/react"
 
-const TIMEOUT_MS = 10 * 60 * 1000 // 10 minutes
+const TIMEOUT_MS = 30 * 60 * 1000 // 30 minutes
 const EVENTS = ["mousemove", "mousedown", "keydown", "scroll", "touchstart", "click"]
 
 export function SessionTimeout() {
