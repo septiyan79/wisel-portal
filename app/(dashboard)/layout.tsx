@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { DashboardNavbar } from "@/components/dashboard/DashboardNavbar"
+import { SessionTimeout } from "@/components/dashboard/SessionTimeout"
 
 export default async function DashboardLayout({
   children,
@@ -12,6 +13,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-[#f0f0f0]">
+      <SessionTimeout />
       <DashboardNavbar
         customerAccount={session.user.customerAccount}
         customerName={session.user.customerName}
