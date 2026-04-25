@@ -59,6 +59,7 @@ model Transaction {
   qty             Int?
   category        String?
   invoiceDate     DateTime?
+  packingSlipDate DateTime?
   unitPrice       Float?
   totalPrice      Float?
   customer        Customer? @relation(fields: [customerAccount], references: [customerAccount])
