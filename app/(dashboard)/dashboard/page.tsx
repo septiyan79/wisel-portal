@@ -3,7 +3,7 @@ export default function DashboardPage() {
     <div className="w-full">
       <div className="mb-4">
         <h1 className="text-xl font-black text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Ringkasan performa dan laporan</p>
+        <p className="text-sm text-gray-500 mt-0.5">Performance summary and reports</p>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">

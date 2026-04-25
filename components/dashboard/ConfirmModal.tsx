@@ -15,7 +15,7 @@ interface ConfirmModalProps {
 export function ConfirmModal({
   title,
   message,
-  confirmLabel = "Ya, lanjutkan",
+  confirmLabel = "Yes, continue",
   confirmVariant = "danger",
   loading = false,
   onConfirm,
@@ -40,7 +40,7 @@ export function ConfirmModal({
             disabled={loading}
             className="flex-1 py-2.5 text-sm font-semibold border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
           >
-            Batal
+            Cancel
           </button>
           <button
             type="button"

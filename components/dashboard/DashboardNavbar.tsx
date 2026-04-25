@@ -22,6 +22,8 @@ export function DashboardNavbar({ customerAccount, customerName, role }: Dashboa
   const [navSlideOpen, setNavSlideOpen] = useState(false)
   const [secondarySlideOpen, setSecondarySlideOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const [mobileExpanded, setMobileExpanded] = useState<string | null>(null)
 
   const initial = (customerName || customerAccount || "?").charAt(0).toUpperCase()
 
@@ -29,9 +31,9 @@ export function DashboardNavbar({ customerAccount, customerName, role }: Dashboa
     <>
       {confirmLogout && (
         <ConfirmModal
-          title="Keluar dari akun?"
-          message="Kamu akan keluar dari sesi ini dan diarahkan ke halaman login."
-          confirmLabel="Ya, Keluar"
+          title="Sign out?"
+          message="You will be signed out and redirected to the login page."
+          confirmLabel="Yes, Sign Out"
           confirmVariant="warning"
           onConfirm={() => signOut({ redirectTo: "/login" })}
           onCancel={() => setConfirmLogout(false)}
@@ -65,21 +67,61 @@ export function DashboardNavbar({ customerAccount, customerName, role }: Dashboa
         </div>
 
         <nav className="px-3 py-3 space-y-0.5 border-b border-gray-100">
-          {navItems.map((item) => (
-            <Link
-              key={item.id}
-              href={item.href}
-              onClick={() => setNavSlideOpen(false)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-semibold transition-colors ${
-                pathname.startsWith(item.href)
-                  ? "bg-[#367C2B]/10 text-[#367C2B]"
-                  : "text-gray-600 hover:bg-gray-50"
-              }`}
-            >
-              <item.icon size={16} />
-              {item.label}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const isActive = pathname.startsWith(item.href)
+            if (item.children) {
+              return (
+                <div key={item.id}>
+                  <button
+                    onClick={() => setMobileExpanded(mobileExpanded === item.id ? null : item.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-semibold transition-colors ${
+                      isActive ? "bg-[#367C2B]/10 text-[#367C2B]" : "text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    <item.icon size={16} />
+                    {item.label}
+                    <ChevronDown
+                      size={13}
+                      className={`ml-auto transition-transform duration-200 ${mobileExpanded === item.id ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  {mobileExpanded === item.id && (
+                    <div className="ml-7 mt-0.5 space-y-0.5">
+                      {item.children.map((child) => (
+                        <Link
+                          key={child.id}
+                          href={child.href}
+                          onClick={() => setNavSlideOpen(false)}
+                          className={`flex items-center px-3 py-2 rounded text-sm font-semibold transition-colors ${
+                            pathname === child.href
+                              ? "text-[#367C2B] bg-[#367C2B]/5"
+                              : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+                          }`}
+                        >
+                          {child.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+            return (
+              <Link
+                key={item.id}
+                href={item.href}
+                onClick={() => setNavSlideOpen(false)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-semibold transition-colors ${
+                  isActive
+                    ? "bg-[#367C2B]/10 text-[#367C2B]"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                <item.icon size={16} />
+                {item.label}
+              </Link>
+            )
+          })}
         </nav>
 
         <div className="px-3 py-3 space-y-0.5">
@@ -89,14 +131,14 @@ export function DashboardNavbar({ customerAccount, customerName, role }: Dashboa
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
           >
             <Settings size={16} />
-            Profil Saya
+            My Profile
           </Link>
           <button
             onClick={() => setConfirmLogout(true)}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
           >
             <LogOut size={16} />
-            Keluar
+            Sign Out
           </button>
         </div>
       </div>
@@ -154,20 +196,66 @@ export function DashboardNavbar({ customerAccount, customerName, role }: Dashboa
 
             {/* Desktop nav tabs */}
             <nav className="hidden md:flex items-center gap-1 ml-8">
-              {navItems.map((item) => (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors border-b-2 ${
-                    pathname.startsWith(item.href)
-                      ? "border-[#367C2B] text-[#367C2B]"
-                      : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
-                  }`}
-                >
-                  <item.icon size={15} />
-                  {item.label}
-                </Link>
-              ))}
+              {navItems.map((item) => {
+                const isActive = pathname.startsWith(item.href)
+                if (item.children) {
+                  return (
+                    <div
+                      key={item.id}
+                      className="relative"
+                      onMouseEnter={() => setOpenDropdown(item.id)}
+                      onMouseLeave={() => setOpenDropdown(null)}
+                    >
+                      <Link
+                        href={item.href}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors border-b-2 ${
+                          isActive
+                            ? "border-[#367C2B] text-[#367C2B]"
+                            : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
+                        }`}
+                      >
+                        <item.icon size={15} />
+                        {item.label}
+                        <ChevronDown
+                          size={12}
+                          className={`transition-transform duration-200 ${openDropdown === item.id ? "rotate-180" : ""}`}
+                        />
+                      </Link>
+                      {openDropdown === item.id && (
+                        <div className="absolute left-0 top-full w-52 bg-white border border-gray-200 rounded shadow-lg z-20 py-1">
+                          {item.children.map((child) => (
+                            <Link
+                              key={child.id}
+                              href={child.href}
+                              className={`flex items-center px-4 py-2.5 text-sm font-semibold transition-colors ${
+                                pathname === child.href
+                                  ? "text-[#367C2B] bg-[#367C2B]/5"
+                                  : "text-gray-700 hover:bg-gray-50"
+                              }`}
+                            >
+                              {child.label}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                }
+                return (
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors border-b-2 ${
+                      isActive
+                        ? "border-[#367C2B] text-[#367C2B]"
+                        : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
+                    }`}
+                  >
+                    <item.icon size={15} />
+                    {item.label}
+                  </Link>
+                )
+              })}
             </nav>
 
             {/* Right side */}
@@ -203,14 +291,14 @@ export function DashboardNavbar({ customerAccount, customerName, role }: Dashboa
                         className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       >
                         <Settings size={14} />
-                        Profil Saya
+                        My Profile
                       </Link>
                       <button
                         onClick={() => setConfirmLogout(true)}
                         className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
                       >
                         <LogOut size={14} />
-                        Keluar
+                        Sign Out
                       </button>
                     </div>
                   </>

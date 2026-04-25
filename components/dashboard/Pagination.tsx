@@ -30,7 +30,7 @@ export function Pagination({ total, page, pageSize, onPageChange, onPageSizeChan
     <div className="flex items-center justify-between gap-4 flex-wrap px-5 py-3.5 border-t border-gray-100">
       {/* Rows per page */}
       <div className="flex items-center gap-2 text-xs text-gray-500">
-        <span>Baris per halaman:</span>
+        <span>Rows per page:</span>
         <select
           value={pageSize}
           onChange={handlePageSize}
@@ -45,14 +45,14 @@ export function Pagination({ total, page, pageSize, onPageChange, onPageSizeChan
       {/* Info + nav */}
       <div className="flex items-center gap-2">
         <span className="text-xs text-gray-400 mr-1">
-          {from}–{to} dari {total}
+          {from}–{to} of {total}
         </span>
 
         <button
           onClick={() => onPageChange(1)}
           disabled={page === 1}
           className={`${btnBase} ${page === 1 ? btnInactive : btnInactive}`}
-          title="Halaman pertama"
+          title="First page"
         >
           <ChevronsLeft size={14} />
         </button>
@@ -60,7 +60,7 @@ export function Pagination({ total, page, pageSize, onPageChange, onPageSizeChan
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}
           className={`${btnBase} ${btnInactive}`}
-          title="Sebelumnya"
+          title="Previous"
         >
           <ChevronLeft size={14} />
         </button>
@@ -72,7 +72,7 @@ export function Pagination({ total, page, pageSize, onPageChange, onPageSizeChan
           onClick={() => onPageChange(page + 1)}
           disabled={page === totalPages}
           className={`${btnBase} ${btnInactive}`}
-          title="Berikutnya"
+          title="Next"
         >
           <ChevronRight size={14} />
         </button>
@@ -80,7 +80,7 @@ export function Pagination({ total, page, pageSize, onPageChange, onPageSizeChan
           onClick={() => onPageChange(totalPages)}
           disabled={page === totalPages}
           className={`${btnBase} ${btnInactive}`}
-          title="Halaman terakhir"
+          title="Last page"
         >
           <ChevronsRight size={14} />
         </button>

@@ -7,7 +7,7 @@ export default async function ProfilePage() {
   return (
     <>
       <div className="mb-5">
-        <h1 className="text-xl font-black text-gray-900">Profil Saya</h1>
+        <h1 className="text-xl font-black text-gray-900">My Profile</h1>
         <div className="mt-1 h-0.5 w-10 bg-[#FFDE00]" />
       </div>
       <ProfileTab

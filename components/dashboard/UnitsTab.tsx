@@ -97,7 +97,7 @@ function UnitFormModal({
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
-      setError(data.error ?? "Terjadi kesalahan")
+      setError(data.error ?? "An error occurred")
       setLoading(false)
       return
     }
@@ -107,10 +107,10 @@ function UnitFormModal({
   }
 
   const textFields: { key: keyof UnitForm; label: string; placeholder: string; required?: boolean }[] = [
-    { key: "deviceNumber", label: "Device Number", placeholder: "Contoh: JD-001",         required: true },
-    { key: "serialNumber", label: "Serial Number", placeholder: "Opsional" },
-    { key: "fleetNumber",  label: "Fleet Number",  placeholder: "Opsional" },
-    { key: "model",        label: "Model / Tipe",  placeholder: "Contoh: John Deere 6120" },
+    { key: "deviceNumber", label: "Device Number", placeholder: "e.g. JD-001",           required: true },
+    { key: "serialNumber", label: "Serial Number", placeholder: "Optional" },
+    { key: "fleetNumber",  label: "Fleet Number",  placeholder: "Optional" },
+    { key: "model",        label: "Model / Type",  placeholder: "e.g. John Deere 6120" },
   ]
 
   return (
@@ -118,7 +118,7 @@ function UnitFormModal({
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h3 className="font-bold text-gray-900">
-            {isEdit ? "Edit Unit" : "Tambah Unit"}
+            {isEdit ? "Edit Unit" : "Add Unit"}
           </h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <X size={18} />
@@ -154,7 +154,7 @@ function UnitFormModal({
                 onChange={(e) => setForm((prev) => ({ ...prev, customerAccount: e.target.value }))}
                 className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#367C2B] focus:border-transparent bg-white"
               >
-                <option value="">— Tidak ada / Belum ditentukan —</option>
+                <option value="">— None / Not assigned —</option>
                 {customers.map((c) => (
                   <option key={c.customerAccount} value={c.customerAccount}>
                     {c.customerName}
@@ -170,7 +170,7 @@ function UnitFormModal({
               onClick={onClose}
               className="flex-1 py-2.5 text-sm font-semibold border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              Batal
+              Cancel
             </button>
             <button
               type="submit"
@@ -178,7 +178,7 @@ function UnitFormModal({
               className="flex-1 py-2.5 text-sm font-bold bg-[#367C2B] hover:bg-[#2d6423] disabled:bg-[#367C2B]/50 text-white rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               {loading && <Loader2 size={14} className="animate-spin" />}
-              {isEdit ? "Simpan Perubahan" : "Tambah Unit"}
+              {isEdit ? "Save Changes" : "Add Unit"}
             </button>
           </div>
         </form>
@@ -226,7 +226,7 @@ export function UnitsTab({ units, customers }: UnitsTabProps) {
     const res = await fetch(`/api/units/${confirmDelete.id}`, { method: "DELETE" })
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
-      setDeleteError(data.error ?? "Gagal menghapus unit")
+      setDeleteError(data.error ?? "Failed to delete unit")
     } else {
       router.refresh()
     }
@@ -253,9 +253,9 @@ export function UnitsTab({ units, customers }: UnitsTabProps) {
       )}
       {confirmDelete && (
         <ConfirmModal
-          title="Hapus Unit?"
-          message={`Unit "${confirmDelete.deviceNumber}"${confirmDelete.model ? ` (${confirmDelete.model})` : ""} akan dihapus permanen.`}
-          confirmLabel="Ya, Hapus"
+          title="Delete Unit?"
+          message={`Unit "${confirmDelete.deviceNumber}"${confirmDelete.model ? ` (${confirmDelete.model})` : ""} will be permanently deleted.`}
+          confirmLabel="Yes, Delete"
           loading={deleting}
           onConfirm={handleDelete}
           onCancel={() => setConfirmDelete(null)}
@@ -266,13 +266,13 @@ export function UnitsTab({ units, customers }: UnitsTabProps) {
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
           <p className="text-2xl font-black text-gray-900">{units.length}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Total Unit Terdaftar</p>
+          <p className="text-xs text-gray-500 mt-0.5">Total Registered Units</p>
         </div>
         <div className="bg-green-50 rounded-xl p-4 border border-gray-100">
           <p className="text-2xl font-black text-green-700">
             {units.filter((u) => u.model).length}
           </p>
-          <p className="text-xs text-gray-500 mt-0.5">Dengan Data Model</p>
+          <p className="text-xs text-gray-500 mt-0.5">With Model Data</p>
         </div>
       </div>
 
@@ -282,7 +282,7 @@ export function UnitsTab({ units, customers }: UnitsTabProps) {
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Cari device, serial, atau model..."
+            placeholder="Search device, serial, or model..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
             className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#367C2B] bg-white"
@@ -300,7 +300,7 @@ export function UnitsTab({ units, customers }: UnitsTabProps) {
           className="flex items-center gap-2 bg-[#367C2B] hover:bg-[#2d6423] text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors shrink-0"
         >
           <Plus size={15} />
-          Tambah Unit
+          Add Unit
         </button>
       </div>
 
@@ -319,14 +319,14 @@ export function UnitsTab({ units, customers }: UnitsTabProps) {
         <div className="bg-white rounded-2xl border border-gray-100 py-16 text-center">
           <Cpu size={32} className="text-gray-200 mx-auto mb-3" />
           <p className="text-sm text-gray-400">
-            {search ? "Tidak ada hasil untuk pencarian ini" : "Belum ada unit terdaftar"}
+            {search ? "No results for this search" : "No units registered yet"}
           </p>
           {!search && (
             <button
               onClick={() => setAdding(true)}
               className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#367C2B] hover:underline"
             >
-              <Plus size={14} /> Tambah unit pertama
+              <Plus size={14} /> Add first unit
             </button>
           )}
         </div>
@@ -342,9 +342,9 @@ export function UnitsTab({ units, customers }: UnitsTabProps) {
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Device Number</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden sm:table-cell">Serial Number</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden md:table-cell">Fleet Number</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden lg:table-cell">Model / Tipe</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden lg:table-cell">Model / Type</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Customer</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Aksi</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -377,7 +377,7 @@ export function UnitsTab({ units, customers }: UnitsTabProps) {
                         <button
                           onClick={() => setConfirmDelete(u)}
                           className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Hapus"
+                          title="Delete"
                         >
                           <Trash2 size={14} />
                         </button>

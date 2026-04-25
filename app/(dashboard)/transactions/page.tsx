@@ -42,7 +42,7 @@ export default async function TransactionsPage() {
   return (
     <>
       <div className="mb-5">
-        <h1 className="text-xl font-black text-gray-900">Riwayat Transaksi</h1>
+        <h1 className="text-xl font-black text-gray-900">Transactions</h1>
         <div className="mt-1 h-0.5 w-10 bg-[#FFDE00]" />
       </div>
       <OrdersTab transactions={transactions} role={session!.user.role} />

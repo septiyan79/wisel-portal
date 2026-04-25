@@ -127,9 +127,9 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
       )}
       {confirmDelete && (
         <ConfirmModal
-          title="Hapus Transaksi?"
-          message={`Transaksi ${confirmDelete.soNumber ? `"${confirmDelete.soNumber}"` : "ini"} akan dihapus permanen dan tidak bisa dikembalikan.`}
-          confirmLabel="Ya, Hapus"
+          title="Delete Transaction?"
+          message={`Transaction ${confirmDelete.soNumber ? `"${confirmDelete.soNumber}"` : ""} will be permanently deleted and cannot be recovered.`}
+          confirmLabel="Yes, Delete"
           loading={deleting}
           onConfirm={handleDelete}
           onCancel={() => setConfirmDelete(null)}
@@ -140,13 +140,13 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {[
           {
-            label: "Total Transaksi",
+            label: "Total Transactions",
             value: transactions.length,
             color: "text-gray-900",
             bg: "bg-gray-50",
           },
           {
-            label: "Bulan Ini",
+            label: "This Month",
             value: transactions.filter((t) => {
               if (!t.invoiceDate) return false
               const d = new Date(t.invoiceDate)
@@ -157,7 +157,7 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
             bg: "bg-green-50",
           },
           {
-            label: "Total Nilai",
+            label: "Total Value",
             value: fmt(transactions.reduce((s, t) => s + (t.totalPrice ?? 0), 0)),
             color: "text-blue-700",
             bg: "bg-blue-50",
@@ -174,7 +174,7 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
       <div className="flex items-center gap-3 flex-wrap">
         <input
           type="text"
-          placeholder="Cari SO Number, part, atau unit..."
+          placeholder="Search SO Number, part, or unit..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1) }}
           className="flex-1 min-w-48 sm:max-w-72 px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#367C2B] bg-white"
@@ -191,7 +191,7 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
           className="flex items-center gap-2 bg-[#367C2B] hover:bg-[#2d6423] text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors shrink-0"
         >
           <Plus size={15} />
-          Tambah
+          Add
         </button>
       </div>
 
@@ -200,14 +200,14 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
         <div className="bg-white rounded-2xl border border-gray-100 py-16 text-center">
           <Package size={32} className="text-gray-200 mx-auto mb-3" />
           <p className="text-sm text-gray-400">
-            {search ? "Tidak ada hasil untuk pencarian ini" : "Belum ada transaksi"}
+            {search ? "No results for this search" : "No transactions yet"}
           </p>
           {!search && (
             <button
               onClick={() => setAdding(true)}
               className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#367C2B] hover:underline"
             >
-              <Plus size={14} /> Tambah transaksi pertama
+              <Plus size={14} /> Add first transaction
             </button>
           )}
         </div>
@@ -239,7 +239,7 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
                   onClick={() => setSelected(t)}
                   className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
                 >
-                  <Eye size={13} /> Detail
+                  <Eye size={13} /> View
                 </button>
                 {t.source === "manual" && (
                   <>
@@ -253,7 +253,7 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
                       onClick={() => setConfirmDelete(t)}
                       className="flex items-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
                     >
-                      <Trash2 size={13} /> Hapus
+                      <Trash2 size={13} /> Delete
                     </button>
                   </>
                 )}
@@ -276,7 +276,7 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden md:table-cell">Total</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden lg:table-cell">Invoice Date</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden lg:table-cell">No. Unit</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Aksi</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -313,7 +313,7 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
                         <button
                           onClick={() => setSelected(t)}
                           className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Lihat detail"
+                          title="View detail"
                         >
                           <Eye size={14} />
                         </button>
@@ -329,7 +329,7 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
                             <button
                               onClick={() => setConfirmDelete(t)}
                               className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              title="Hapus"
+                              title="Delete"
                             >
                               <Trash2 size={14} />
                             </button>

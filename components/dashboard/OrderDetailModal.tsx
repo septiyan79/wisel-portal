@@ -24,15 +24,15 @@ export function OrderDetailModal({ transaction: t, onClose }: OrderDetailModalPr
     { label: "SO Number",     value: t.soNumber     ?? "—", mono: true  },
     { label: "Part Number",   value: t.partNumber   ?? "—", mono: true  },
     { label: "AX Part No.",   value: t.axPartNumber ?? "—", mono: true  },
-    { label: "Nama Part",     value: t.partName     ?? "—", mono: false },
+    { label: "Part Name",         value: t.partName     ?? "—", mono: false },
     { label: "Qty",               value: t.qty != null ? `${t.qty} pcs` : "—", mono: false },
     { label: "Category",          value: t.category         ?? "—", mono: false },
-    { label: "Harga Satuan",      value: fmt(t.unitPrice),           mono: false },
-    { label: "Total Harga",       value: fmt(t.totalPrice),          mono: false },
+    { label: "Unit Price",        value: fmt(t.unitPrice),           mono: false },
+    { label: "Total Price",       value: fmt(t.totalPrice),          mono: false },
     { label: "Invoice Date",      value: fmtDate(t.invoiceDate),     mono: false },
     { label: "Packing Slip Date", value: fmtDate(t.packingSlipDate), mono: false },
-    { label: "No. Unit",      value: t.deviceNumber ?? "—", mono: true  },
-    { label: "Akun Customer", value: t.customerAccount ?? "—", mono: true },
+    { label: "Unit No.",          value: t.deviceNumber ?? "—", mono: true  },
+    { label: "Customer Account",  value: t.customerAccount ?? "—", mono: true },
   ]
 
   return (
@@ -40,7 +40,7 @@ export function OrderDetailModal({ transaction: t, onClose }: OrderDetailModalPr
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h3 className="font-bold text-gray-900">Detail Transaksi</h3>
+          <h3 className="font-bold text-gray-900">Transaction Detail</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <X size={18} />
           </button>
@@ -62,7 +62,7 @@ export function OrderDetailModal({ transaction: t, onClose }: OrderDetailModalPr
             onClick={onClose}
             className="w-full py-2.5 text-sm font-semibold border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors"
           >
-            Tutup
+            Close
           </button>
         </div>
       </div>

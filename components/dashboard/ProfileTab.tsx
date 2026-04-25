@@ -23,7 +23,7 @@ export function ProfileTab({ customerAccount, customerName, role }: ProfileTabPr
       {saved && (
         <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-xl flex items-center gap-2">
           <CheckCircle size={15} />
-          Profil berhasil disimpan
+          Profile saved successfully
         </div>
       )}
 
@@ -47,10 +47,10 @@ export function ProfileTab({ customerAccount, customerName, role }: ProfileTabPr
 
       {/* Informasi akun */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
-        <h3 className="font-bold text-gray-900 mb-5 text-sm">Informasi Akun</h3>
+        <h3 className="font-bold text-gray-900 mb-5 text-sm">Account Information</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Nama Pelanggan</label>
+            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Customer Name</label>
             <div className="relative">
               <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -62,7 +62,7 @@ export function ProfileTab({ customerAccount, customerName, role }: ProfileTabPr
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Nomor Akun</label>
+            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Account Number</label>
             <div className="relative">
               <Building2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -78,9 +78,9 @@ export function ProfileTab({ customerAccount, customerName, role }: ProfileTabPr
 
       {/* Ganti password */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
-        <h3 className="font-bold text-gray-900 mb-4 text-sm">Keamanan Akun</h3>
+        <h3 className="font-bold text-gray-900 mb-4 text-sm">Account Security</h3>
         <div className="space-y-3">
-          {["Password Saat Ini", "Password Baru", "Konfirmasi Password Baru"].map((label) => (
+          {["Current Password", "New Password", "Confirm New Password"].map((label) => (
             <div key={label}>
               <label className="block text-xs font-semibold text-gray-500 mb-1.5">{label}</label>
               <input
@@ -95,7 +95,7 @@ export function ProfileTab({ customerAccount, customerName, role }: ProfileTabPr
           onClick={handleSave}
           className="mt-4 flex items-center gap-2 bg-[#367C2B] hover:bg-[#2d6423] text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors"
         >
-          <Save size={14} /> Ubah Password
+          <Save size={14} /> Change Password
         </button>
       </div>
     </div>

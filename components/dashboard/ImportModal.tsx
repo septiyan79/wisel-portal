@@ -76,7 +76,7 @@ export function ImportModal({ type, role, customers = [], onClose, onImported }:
 
   const handleFile = useCallback((f: File) => {
     if (!f.name.match(/\.(xlsx|xls)$/i)) {
-      setApiError("Hanya file Excel (.xlsx / .xls) yang diterima")
+      setApiError("Only Excel files (.xlsx / .xls) are accepted")
       return
     }
     setApiError("")
@@ -108,7 +108,7 @@ export function ImportModal({ type, role, customers = [], onClose, onImported }:
     const data = await res.json().catch(() => ({}))
 
     if (!res.ok) {
-      setApiError(data.error ?? "Terjadi kesalahan")
+      setApiError(data.error ?? "An error occurred")
     } else {
       setResult(data as ImportResult)
       if ((data as ImportResult).success > 0) onImported()
@@ -116,7 +116,7 @@ export function ImportModal({ type, role, customers = [], onClose, onImported }:
     setLoading(false)
   }
 
-  const title = type === "transactions" ? "Import Transaksi" : "Import Unit"
+  const title = type === "transactions" ? "Import Transactions" : "Import Units"
   const hasResult = result !== null
 
   return (
@@ -139,8 +139,8 @@ export function ImportModal({ type, role, customers = [], onClose, onImported }:
           {/* Download template */}
           <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
             <div>
-              <p className="text-sm font-semibold text-gray-700">Unduh Template</p>
-              <p className="text-xs text-gray-400 mt-0.5">Gunakan format ini agar import berhasil</p>
+              <p className="text-sm font-semibold text-gray-700">Download Template</p>
+              <p className="text-xs text-gray-400 mt-0.5">Use this format to ensure a successful import</p>
             </div>
             <button
               type="button"
@@ -155,7 +155,7 @@ export function ImportModal({ type, role, customers = [], onClose, onImported }:
           {/* Customer picker — admin only, transactions only */}
           {type === "transactions" && isAdmin && customers.length > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-3">
-              <span className="text-xs font-bold text-amber-700 shrink-0">Atas nama:</span>
+              <span className="text-xs font-bold text-amber-700 shrink-0">On behalf of:</span>
               <select
                 value={customerAccount}
                 onChange={(e) => setCustomerAccount(e.target.value)}
@@ -195,13 +195,13 @@ export function ImportModal({ type, role, customers = [], onClose, onImported }:
               <div className="flex flex-col items-center gap-2">
                 <FileSpreadsheet size={28} className="text-green-600" />
                 <p className="text-sm font-semibold text-green-700">{file.name}</p>
-                <p className="text-xs text-gray-400">{(file.size / 1024).toFixed(1)} KB — klik untuk ganti</p>
+                <p className="text-xs text-gray-400">{(file.size / 1024).toFixed(1)} KB — click to change</p>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
                 <Upload size={28} className="text-gray-300" />
-                <p className="text-sm font-semibold text-gray-500">Drag & drop atau klik untuk pilih file</p>
-                <p className="text-xs text-gray-400">Format: .xlsx atau .xls</p>
+                <p className="text-sm font-semibold text-gray-500">Drag & drop or click to select a file</p>
+                <p className="text-xs text-gray-400">Format: .xlsx or .xls</p>
               </div>
             )}
           </div>
@@ -221,24 +221,24 @@ export function ImportModal({ type, role, customers = [], onClose, onImported }:
               <div className="grid grid-cols-3 gap-2">
                 <div className="bg-gray-50 rounded-xl p-3 text-center border border-gray-100">
                   <p className="text-lg font-black text-gray-700">{result!.total}</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">Total Baris</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">Total Rows</p>
                 </div>
                 <div className="bg-green-50 rounded-xl p-3 text-center border border-green-100">
                   <p className="text-lg font-black text-green-700">{result!.success}</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">Berhasil</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">Succeeded</p>
                 </div>
                 <div className={`rounded-xl p-3 text-center border ${result!.errors.length > 0 ? "bg-red-50 border-red-100" : "bg-gray-50 border-gray-100"}`}>
                   <p className={`text-lg font-black ${result!.errors.length > 0 ? "text-red-600" : "text-gray-400"}`}>
                     {result!.errors.length}
                   </p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">Gagal</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">Failed</p>
                 </div>
               </div>
 
               {result!.success > 0 && result!.errors.length === 0 && (
                 <div className="flex items-center gap-2 text-sm text-green-700 font-semibold">
                   <CheckCircle2 size={16} />
-                  Semua data berhasil diimport!
+                  All data imported successfully!
                 </div>
               )}
 
@@ -246,12 +246,12 @@ export function ImportModal({ type, role, customers = [], onClose, onImported }:
               {result!.errors.length > 0 && (
                 <div className="bg-red-50 border border-red-100 rounded-xl overflow-hidden">
                   <p className="text-xs font-bold text-red-600 px-4 py-2 border-b border-red-100">
-                    Baris yang gagal
+                    Failed rows
                   </p>
                   <div className="max-h-36 overflow-y-auto divide-y divide-red-100">
                     {result!.errors.map((err) => (
                       <div key={err.row} className="flex items-start gap-3 px-4 py-2">
-                        <span className="text-xs font-bold text-red-400 shrink-0 mt-0.5">Baris {err.row}</span>
+                        <span className="text-xs font-bold text-red-400 shrink-0 mt-0.5">Row {err.row}</span>
                         <span className="text-xs text-red-600">{err.message}</span>
                       </div>
                     ))}
@@ -269,7 +269,7 @@ export function ImportModal({ type, role, customers = [], onClose, onImported }:
             onClick={onClose}
             className="flex-1 py-2.5 text-sm font-semibold border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors"
           >
-            {hasResult ? "Tutup" : "Batal"}
+            {hasResult ? "Close" : "Cancel"}
           </button>
           {!hasResult && (
             <button
@@ -279,7 +279,7 @@ export function ImportModal({ type, role, customers = [], onClose, onImported }:
               className="flex-1 py-2.5 text-sm font-bold bg-[#367C2B] hover:bg-[#2d6423] disabled:bg-[#367C2B]/40 text-white rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               {loading && <Loader2 size={14} className="animate-spin" />}
-              {loading ? "Mengimport..." : "Import Sekarang"}
+              {loading ? "Importing..." : "Import Now"}
             </button>
           )}
           {hasResult && result!.errors.length > 0 && result!.success === 0 && (
@@ -288,7 +288,7 @@ export function ImportModal({ type, role, customers = [], onClose, onImported }:
               onClick={() => { setResult(null); setFile(null) }}
               className="flex-1 py-2.5 text-sm font-bold bg-[#367C2B] hover:bg-[#2d6423] text-white rounded-xl transition-colors"
             >
-              Coba Lagi
+              Try Again
             </button>
           )}
         </div>

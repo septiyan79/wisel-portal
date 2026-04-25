@@ -45,18 +45,18 @@ const EMPTY: FormState = {
 }
 
 const FIELDS: { key: keyof FormState; label: string; type: string; placeholder: string }[] = [
-  { key: "soNumber",     label: "SO Number",         type: "text",   placeholder: "Contoh: SO-2025-001" },
-  { key: "quotation",    label: "Quotation",         type: "text",   placeholder: "Opsional" },
-  { key: "poNumber",     label: "PO Number",         type: "text",   placeholder: "Opsional" },
-  { key: "partNumber",   label: "Part Number",       type: "text",   placeholder: "Contoh: RE504836" },
-  { key: "axPartNumber", label: "AX Part Number",    type: "text",   placeholder: "Opsional" },
-  { key: "partName",     label: "Nama Part",         type: "text",   placeholder: "Contoh: Filter Oli Mesin" },
+  { key: "soNumber",     label: "SO Number",         type: "text",   placeholder: "e.g. SO-2025-001" },
+  { key: "quotation",    label: "Quotation",         type: "text",   placeholder: "Optional" },
+  { key: "poNumber",     label: "PO Number",         type: "text",   placeholder: "Optional" },
+  { key: "partNumber",   label: "Part Number",       type: "text",   placeholder: "e.g. RE504836" },
+  { key: "axPartNumber", label: "AX Part Number",    type: "text",   placeholder: "Optional" },
+  { key: "partName",     label: "Part Name",         type: "text",   placeholder: "e.g. Oil Filter" },
   { key: "qty",             label: "Qty",               type: "number", placeholder: "0" },
-  { key: "category",        label: "Category",          type: "text",   placeholder: "Opsional" },
+  { key: "category",        label: "Category",          type: "text",   placeholder: "Optional" },
   { key: "invoiceDate",     label: "Invoice Date",      type: "date",   placeholder: "" },
   { key: "packingSlipDate", label: "Packing Slip Date", type: "date",   placeholder: "" },
-  { key: "unitPrice",    label: "Harga Satuan (Rp)", type: "number", placeholder: "0" },
-  { key: "totalPrice",   label: "Total Harga (Rp)",  type: "number", placeholder: "Auto-hitung dari Qty × Satuan" },
+  { key: "unitPrice",    label: "Unit Price (Rp)",   type: "number", placeholder: "0" },
+  { key: "totalPrice",   label: "Total Price (Rp)",  type: "number", placeholder: "Auto-calculated from Qty × Unit Price" },
 ]
 
 function toDateInput(iso: string | null | undefined) {
@@ -157,8 +157,8 @@ export function TransactionFormModal({ initial, role, onClose, onSaved }: Transa
     if (emptyIndexes.length > 0) {
       setError(
         emptyIndexes.length === 1
-          ? `Item #${emptyIndexes[0]} masih kosong. Isi minimal satu field atau hapus item tersebut.`
-          : `Item #${emptyIndexes.join(", #")} masih kosong. Isi minimal satu field atau hapus item tersebut.`
+          ? `Item #${emptyIndexes[0]} is empty. Fill at least one field or remove it.`
+          : `Items #${emptyIndexes.join(", #")} are empty. Fill at least one field or remove them.`
       )
       return
     }
@@ -192,7 +192,7 @@ export function TransactionFormModal({ initial, role, onClose, onSaved }: Transa
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        setError(data.error ?? "Terjadi kesalahan")
+        setError(data.error ?? "An error occurred")
         setLoading(false)
         return
       }
@@ -204,7 +204,7 @@ export function TransactionFormModal({ initial, role, onClose, onSaved }: Transa
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        setError(data.error ?? "Terjadi kesalahan")
+        setError(data.error ?? "An error occurred")
         setLoading(false)
         return
       }
@@ -221,10 +221,10 @@ export function TransactionFormModal({ initial, role, onClose, onSaved }: Transa
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <div>
             <h3 className="font-bold text-gray-900">
-              {isEdit ? "Edit Transaksi" : "Tambah Transaksi Manual"}
+              {isEdit ? "Edit Transaction" : "Add Manual Transaction"}
             </h3>
             {!isEdit && forms.length > 1 && (
-              <p className="text-xs text-gray-400 mt-0.5">{forms.length} item akan ditambahkan</p>
+              <p className="text-xs text-gray-400 mt-0.5">{forms.length} items will be added</p>
             )}
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
@@ -244,7 +244,7 @@ export function TransactionFormModal({ initial, role, onClose, onSaved }: Transa
             {/* Customer picker — admin only */}
             {isAdmin && (
               <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-3">
-                <span className="text-xs font-bold text-amber-700 shrink-0">Atas nama:</span>
+                <span className="text-xs font-bold text-amber-700 shrink-0">On behalf of:</span>
                 <select
                   value={customerAccount}
                   onChange={(e) => setCustomerAccount(e.target.value)}
@@ -272,7 +272,7 @@ export function TransactionFormModal({ initial, role, onClose, onSaved }: Transa
                         type="button"
                         onClick={() => removeItem(index)}
                         className="text-red-400 hover:text-red-600 transition-colors p-1 rounded-lg hover:bg-red-50"
-                        title="Hapus item ini"
+                        title="Remove this item"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -302,7 +302,7 @@ export function TransactionFormModal({ initial, role, onClose, onSaved }: Transa
                     {/* Dropdown Unit */}
                     <div className="col-span-1">
                       <label className="block text-xs font-semibold text-gray-500 mb-1.5">
-                        No. Unit / Device
+                        Unit / Device No.
                       </label>
                       <select
                         value={form.deviceNumber}
@@ -315,7 +315,7 @@ export function TransactionFormModal({ initial, role, onClose, onSaved }: Transa
                         }
                         className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#367C2B] focus:border-transparent bg-white"
                       >
-                        <option value="">— Tidak ada / pilih unit —</option>
+                        <option value="">— None / select unit —</option>
                         {units.map((u) => (
                           <option key={u.id} value={u.deviceNumber}>
                             {u.deviceNumber}
@@ -338,7 +338,7 @@ export function TransactionFormModal({ initial, role, onClose, onSaved }: Transa
                 className="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm font-semibold text-gray-400 hover:border-[#367C2B] hover:text-[#367C2B] transition-colors flex items-center justify-center gap-2"
               >
                 <Plus size={15} />
-                Tambah Item
+                Add Item
               </button>
             )}
           </div>
@@ -350,7 +350,7 @@ export function TransactionFormModal({ initial, role, onClose, onSaved }: Transa
               onClick={onClose}
               className="flex-1 py-2.5 text-sm font-semibold border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              Batal
+              Cancel
             </button>
             <button
               type="submit"
@@ -359,10 +359,10 @@ export function TransactionFormModal({ initial, role, onClose, onSaved }: Transa
             >
               {loading && <Loader2 size={14} className="animate-spin" />}
               {isEdit
-                ? "Simpan Perubahan"
+                ? "Save Changes"
                 : forms.length > 1
-                  ? `Tambah ${forms.length} Transaksi`
-                  : "Tambah Transaksi"}
+                  ? `Add ${forms.length} Transactions`
+                  : "Add Transaction"}
             </button>
           </div>
         </form>
