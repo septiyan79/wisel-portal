@@ -23,7 +23,9 @@ export async function GET() {
       axPartNumber: true,
       partName: true,
       qty: true,
+      category: true,
       invoiceDate: true,
+      packingSlipDate: true,
       unitPrice: true,
       totalPrice: true,
       customerAccount: true,
@@ -47,7 +49,7 @@ export async function POST(req: Request) {
   for (const item of items) {
     const {
       soNumber, quotation, poNumber, partNumber, axPartNumber, partName,
-      qty, invoiceDate, unitPrice, totalPrice, deviceNumber, customerAccount,
+      qty, category, invoiceDate, packingSlipDate, unitPrice, totalPrice, deviceNumber, customerAccount,
     } = item
 
     // Admin boleh pilih customer, customer hanya bisa atas nama diri sendiri
@@ -66,8 +68,10 @@ export async function POST(req: Request) {
         partNumber:   partNumber   || null,
         axPartNumber: axPartNumber || null,
         partName:     partName     || null,
-        qty:          qty != null ? Number(qty) : null,
-        invoiceDate:  invoiceDate ? new Date(invoiceDate) : null,
+        qty:             qty != null ? Number(qty) : null,
+        category:        category        || null,
+        invoiceDate:     invoiceDate     ? new Date(invoiceDate)     : null,
+        packingSlipDate: packingSlipDate ? new Date(packingSlipDate) : null,
         unitPrice:    unitPrice  != null ? Number(unitPrice)  : null,
         totalPrice:   totalPrice != null ? Number(totalPrice) : null,
         deviceNumber: deviceNumber || null,

@@ -31,7 +31,9 @@ type FormState = {
   axPartNumber: string
   partName: string
   qty: string
+  category: string
   invoiceDate: string
+  packingSlipDate: string
   unitPrice: string
   totalPrice: string
   deviceNumber: string
@@ -39,7 +41,7 @@ type FormState = {
 
 const EMPTY: FormState = {
   soNumber: "", quotation: "", poNumber: "", partNumber: "", axPartNumber: "", partName: "",
-  qty: "", invoiceDate: "", unitPrice: "", totalPrice: "", deviceNumber: "",
+  qty: "", category: "", invoiceDate: "", packingSlipDate: "", unitPrice: "", totalPrice: "", deviceNumber: "",
 }
 
 const FIELDS: { key: keyof FormState; label: string; type: string; placeholder: string }[] = [
@@ -49,8 +51,10 @@ const FIELDS: { key: keyof FormState; label: string; type: string; placeholder: 
   { key: "partNumber",   label: "Part Number",       type: "text",   placeholder: "Contoh: RE504836" },
   { key: "axPartNumber", label: "AX Part Number",    type: "text",   placeholder: "Opsional" },
   { key: "partName",     label: "Nama Part",         type: "text",   placeholder: "Contoh: Filter Oli Mesin" },
-  { key: "qty",          label: "Qty",               type: "number", placeholder: "0" },
-  { key: "invoiceDate",  label: "Invoice Date",      type: "date",   placeholder: "" },
+  { key: "qty",             label: "Qty",               type: "number", placeholder: "0" },
+  { key: "category",        label: "Category",          type: "text",   placeholder: "Opsional" },
+  { key: "invoiceDate",     label: "Invoice Date",      type: "date",   placeholder: "" },
+  { key: "packingSlipDate", label: "Packing Slip Date", type: "date",   placeholder: "" },
   { key: "unitPrice",    label: "Harga Satuan (Rp)", type: "number", placeholder: "0" },
   { key: "totalPrice",   label: "Total Harga (Rp)",  type: "number", placeholder: "Auto-hitung dari Qty × Satuan" },
 ]
@@ -101,11 +105,13 @@ export function TransactionFormModal({ initial, role, onClose, onSaved }: Transa
         partNumber:   initial.partNumber   ?? "",
         axPartNumber: initial.axPartNumber ?? "",
         partName:     initial.partName     ?? "",
-        qty:          initial.qty != null ? String(initial.qty) : "",
-        invoiceDate:  toDateInput(initial.invoiceDate),
-        unitPrice:    initial.unitPrice  != null ? String(initial.unitPrice)  : "",
-        totalPrice:   initial.totalPrice != null ? String(initial.totalPrice) : "",
-        deviceNumber: initial.deviceNumber ?? "",
+        qty:             initial.qty != null ? String(initial.qty) : "",
+        category:        initial.category        ?? "",
+        invoiceDate:     toDateInput(initial.invoiceDate),
+        packingSlipDate: toDateInput(initial.packingSlipDate),
+        unitPrice:       initial.unitPrice  != null ? String(initial.unitPrice)  : "",
+        totalPrice:      initial.totalPrice != null ? String(initial.totalPrice) : "",
+        deviceNumber:    initial.deviceNumber ?? "",
       }])
       if (isAdmin && initial.customerAccount) setCustomerAccount(initial.customerAccount)
     } else {
@@ -167,9 +173,11 @@ export function TransactionFormModal({ initial, role, onClose, onSaved }: Transa
         partNumber:      form.partNumber   || null,
         axPartNumber:    form.axPartNumber || null,
         partName:        form.partName     || null,
-        qty:             form.qty         ? Number(form.qty)        : null,
-        invoiceDate:     form.invoiceDate  || null,
-        unitPrice:       form.unitPrice   ? Number(form.unitPrice)  : null,
+        qty:             form.qty             ? Number(form.qty)        : null,
+        category:        form.category        || null,
+        invoiceDate:     form.invoiceDate     || null,
+        packingSlipDate: form.packingSlipDate || null,
+        unitPrice:       form.unitPrice       ? Number(form.unitPrice)  : null,
         totalPrice:      form.totalPrice  ? Number(form.totalPrice) : null,
         deviceNumber:    form.deviceNumber || null,
         ...(isAdmin && { customerAccount }),

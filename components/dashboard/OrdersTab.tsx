@@ -20,7 +20,9 @@ export type TransactionRow = {
   axPartNumber: string | null
   partName: string | null
   qty: number | null
+  category: string | null
   invoiceDate: string | null
+  packingSlipDate: string | null
   unitPrice: number | null
   totalPrice: number | null
   customerAccount: string | null

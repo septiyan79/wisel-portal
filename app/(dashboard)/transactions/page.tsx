@@ -22,7 +22,9 @@ export default async function TransactionsPage() {
       axPartNumber: true,
       partName: true,
       qty: true,
+      category: true,
       invoiceDate: true,
+      packingSlipDate: true,
       unitPrice: true,
       totalPrice: true,
       customerAccount: true,
@@ -33,7 +35,8 @@ export default async function TransactionsPage() {
 
   const transactions = raw.map((t) => ({
     ...t,
-    invoiceDate: t.invoiceDate?.toISOString() ?? null,
+    invoiceDate:     t.invoiceDate?.toISOString()     ?? null,
+    packingSlipDate: t.packingSlipDate?.toISOString() ?? null,
   }))
 
   return (

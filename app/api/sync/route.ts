@@ -12,7 +12,9 @@ interface TransactionPayload {
   axPartNumber?: string
   partName?: string
   qty?: number
+  category?: string
   invoiceDate?: string
+  packingSlipDate?: string
   unitPrice?: number
   totalPrice?: number
   customerAccount?: string
@@ -60,7 +62,9 @@ export async function POST(req: NextRequest) {
               axPartNumber: t.axPartNumber ?? null,
               partName: t.partName ?? null,
               qty: t.qty ?? null,
+              category: t.category ?? null,
               invoiceDate: t.invoiceDate ? new Date(t.invoiceDate) : null,
+              packingSlipDate: t.packingSlipDate ? new Date(t.packingSlipDate) : null,
               unitPrice: t.unitPrice ?? null,
               totalPrice: t.totalPrice ?? null,
               customerAccount: t.customerAccount ?? null,
@@ -76,7 +80,9 @@ export async function POST(req: NextRequest) {
               axPartNumber: t.axPartNumber ?? null,
               partName: t.partName ?? null,
               qty: t.qty ?? null,
+              category: t.category ?? null,
               invoiceDate: t.invoiceDate ? new Date(t.invoiceDate) : null,
+              packingSlipDate: t.packingSlipDate ? new Date(t.packingSlipDate) : null,
               unitPrice: t.unitPrice ?? null,
               totalPrice: t.totalPrice ?? null,
               customerAccount: t.customerAccount ?? null,
