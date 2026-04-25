@@ -25,20 +25,23 @@ model Customer {
   customerAccount String        @unique
   customerName    String
   user            User?
+  units           Unit[]
   transactions    Transaction[]
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 }
 
 model Unit {
-  id           String        @id @default(cuid())
-  deviceNumber String        @unique
-  serialNumber String?       @unique
-  fleetNumber  String?
-  model        String?
-  transactions Transaction[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id              String        @id @default(cuid())
+  deviceNumber    String        @unique
+  serialNumber    String?       @unique
+  fleetNumber     String?
+  model           String?
+  customerAccount String?
+  customer        Customer?     @relation(fields: [customerAccount], references: [customerAccount])
+  transactions    Transaction[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model Transaction {

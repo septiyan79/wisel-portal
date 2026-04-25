@@ -14,10 +14,17 @@ export type UnitRow = {
   fleetNumber: string | null
   model: string | null
   createdAt: string
+  customerName: string | null
+}
+
+type CustomerOption = {
+  customerAccount: string
+  customerName: string
 }
 
 interface UnitsTabProps {
   units: UnitRow[]
+  customers: CustomerOption[]
 }
 
 type UnitForm = {
@@ -25,27 +32,36 @@ type UnitForm = {
   serialNumber: string
   fleetNumber: string
   model: string
+  customerAccount: string
 }
 
-const EMPTY_FORM: UnitForm = { deviceNumber: "", serialNumber: "", fleetNumber: "", model: "" }
+const EMPTY_FORM: UnitForm = { deviceNumber: "", serialNumber: "", fleetNumber: "", model: "", customerAccount: "" }
 
 function UnitFormModal({
   initial,
+  customers,
   onClose,
   onSaved,
 }: {
   initial: UnitRow | null
+  customers: CustomerOption[]
   onClose: () => void
   onSaved: () => void
 }) {
   const isEdit = !!initial
+
+  const initialCustomerAccount = initial
+    ? (customers.find((c) => c.customerName === initial.customerName)?.customerAccount ?? "")
+    : ""
+
   const [form, setForm] = useState<UnitForm>(
     initial
       ? {
-          deviceNumber: initial.deviceNumber,
-          serialNumber: initial.serialNumber ?? "",
-          fleetNumber:  initial.fleetNumber  ?? "",
-          model:        initial.model        ?? "",
+          deviceNumber:    initial.deviceNumber,
+          serialNumber:    initial.serialNumber ?? "",
+          fleetNumber:     initial.fleetNumber  ?? "",
+          model:           initial.model        ?? "",
+          customerAccount: initialCustomerAccount,
         }
       : { ...EMPTY_FORM }
   )
@@ -63,10 +79,11 @@ function UnitFormModal({
     setLoading(true)
 
     const payload = {
-      deviceNumber: form.deviceNumber,
-      serialNumber: form.serialNumber || null,
-      fleetNumber:  form.fleetNumber  || null,
-      model:        form.model        || null,
+      deviceNumber:    form.deviceNumber,
+      serialNumber:    form.serialNumber    || null,
+      fleetNumber:     form.fleetNumber     || null,
+      model:           form.model           || null,
+      customerAccount: form.customerAccount || null,
     }
 
     const url    = isEdit ? `/api/units/${initial!.id}` : "/api/units"
@@ -89,11 +106,11 @@ function UnitFormModal({
     onSaved()
   }
 
-  const fields: { key: keyof UnitForm; label: string; placeholder: string; required?: boolean }[] = [
-    { key: "deviceNumber", label: "Device Number",  placeholder: "Contoh: JD-001",         required: true },
-    { key: "serialNumber", label: "Serial Number",  placeholder: "Opsional" },
-    { key: "fleetNumber",  label: "Fleet Number",   placeholder: "Opsional" },
-    { key: "model",        label: "Model / Tipe",   placeholder: "Contoh: John Deere 6120" },
+  const textFields: { key: keyof UnitForm; label: string; placeholder: string; required?: boolean }[] = [
+    { key: "deviceNumber", label: "Device Number", placeholder: "Contoh: JD-001",         required: true },
+    { key: "serialNumber", label: "Serial Number", placeholder: "Opsional" },
+    { key: "fleetNumber",  label: "Fleet Number",  placeholder: "Opsional" },
+    { key: "model",        label: "Model / Tipe",  placeholder: "Contoh: John Deere 6120" },
   ]
 
   return (
@@ -115,7 +132,7 @@ function UnitFormModal({
                 {error}
               </div>
             )}
-            {fields.map(({ key, label, placeholder, required }) => (
+            {textFields.map(({ key, label, placeholder, required }) => (
               <div key={key}>
                 <label className="block text-xs font-semibold text-gray-500 mb-1.5">
                   {label} {required && <span className="text-red-500">*</span>}
@@ -130,6 +147,21 @@ function UnitFormModal({
                 />
               </div>
             ))}
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Customer</label>
+              <select
+                value={form.customerAccount}
+                onChange={(e) => setForm((prev) => ({ ...prev, customerAccount: e.target.value }))}
+                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#367C2B] focus:border-transparent bg-white"
+              >
+                <option value="">— Tidak ada / Belum ditentukan —</option>
+                {customers.map((c) => (
+                  <option key={c.customerAccount} value={c.customerAccount}>
+                    {c.customerName}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="flex gap-3 px-6 py-4 border-t border-gray-100">
@@ -155,7 +187,7 @@ function UnitFormModal({
   )
 }
 
-export function UnitsTab({ units }: UnitsTabProps) {
+export function UnitsTab({ units, customers }: UnitsTabProps) {
   const router = useRouter()
   const [search, setSearch]     = useState("")
   const [adding, setAdding]     = useState(false)
@@ -174,7 +206,8 @@ export function UnitsTab({ units }: UnitsTabProps) {
       u.deviceNumber.toLowerCase().includes(q) ||
       u.serialNumber?.toLowerCase().includes(q) ||
       u.fleetNumber?.toLowerCase().includes(q) ||
-      u.model?.toLowerCase().includes(q)
+      u.model?.toLowerCase().includes(q) ||
+      u.customerName?.toLowerCase().includes(q)
     )
   })
 
@@ -206,6 +239,7 @@ export function UnitsTab({ units }: UnitsTabProps) {
       {(adding || editing) && (
         <UnitFormModal
           initial={editing}
+          customers={customers}
           onClose={() => { setAdding(false); setEditing(null) }}
           onSaved={handleSaved}
         />
@@ -308,7 +342,8 @@ export function UnitsTab({ units }: UnitsTabProps) {
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Device Number</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden sm:table-cell">Serial Number</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden md:table-cell">Fleet Number</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Model / Tipe</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden lg:table-cell">Model / Tipe</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Customer</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Aksi</th>
                 </tr>
               </thead>
@@ -324,8 +359,11 @@ export function UnitsTab({ units }: UnitsTabProps) {
                     <td className="px-5 py-4 text-xs text-gray-500 hidden md:table-cell">
                       {u.fleetNumber ?? "—"}
                     </td>
-                    <td className="px-5 py-4 text-sm text-gray-700">
+                    <td className="px-5 py-4 text-sm text-gray-700 hidden lg:table-cell">
                       {u.model ?? <span className="text-gray-300">—</span>}
+                    </td>
+                    <td className="px-5 py-4 text-sm text-gray-700">
+                      {u.customerName ?? <span className="text-gray-300">—</span>}
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-1">

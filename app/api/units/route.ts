@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   if (session.user.role === "customer") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
-  const { deviceNumber, serialNumber, fleetNumber, model } = await req.json()
+  const { deviceNumber, serialNumber, fleetNumber, model, customerAccount } = await req.json()
 
   if (!deviceNumber?.trim()) {
     return NextResponse.json({ error: "Device Number wajib diisi" }, { status: 400 })
@@ -39,10 +39,11 @@ export async function POST(req: Request) {
 
   const unit = await prisma.unit.create({
     data: {
-      deviceNumber: deviceNumber.trim(),
-      serialNumber: serialNumber?.trim() || null,
-      fleetNumber:  fleetNumber?.trim()  || null,
-      model:        model?.trim()        || null,
+      deviceNumber:    deviceNumber.trim(),
+      serialNumber:    serialNumber?.trim()    || null,
+      fleetNumber:     fleetNumber?.trim()     || null,
+      model:           model?.trim()           || null,
+      customerAccount: customerAccount?.trim() || null,
     },
   })
 

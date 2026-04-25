@@ -11,7 +11,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const unit = await prisma.unit.findUnique({ where: { id } })
   if (!unit) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-  const { deviceNumber, serialNumber, fleetNumber, model } = await req.json()
+  const { deviceNumber, serialNumber, fleetNumber, model, customerAccount } = await req.json()
 
   if (!deviceNumber?.trim()) {
     return NextResponse.json({ error: "Device Number wajib diisi" }, { status: 400 })
@@ -26,10 +26,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const updated = await prisma.unit.update({
     where: { id },
     data: {
-      deviceNumber: deviceNumber.trim(),
-      serialNumber: serialNumber?.trim() || null,
-      fleetNumber:  fleetNumber?.trim()  || null,
-      model:        model?.trim()        || null,
+      deviceNumber:    deviceNumber.trim(),
+      serialNumber:    serialNumber?.trim()    || null,
+      fleetNumber:     fleetNumber?.trim()     || null,
+      model:           model?.trim()           || null,
+      customerAccount: customerAccount?.trim() || null,
     },
   })
 
