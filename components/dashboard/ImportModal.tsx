@@ -38,6 +38,7 @@ const TRANSACTION_TEMPLATE = [
     "Category": "Repair",
     "Qty": 5,
     "Invoice Date": "2025-04-01",
+    "Packing Slip Date": "2025-04-03",
     "Harga Satuan": 240000,
     "Total Harga": 1200000,
     "No. Unit / Device": "",

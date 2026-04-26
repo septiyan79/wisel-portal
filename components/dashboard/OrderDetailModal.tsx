@@ -14,6 +14,17 @@ function fmt(value: number | null | undefined, currency = true) {
   return value.toString()
 }
 
+const CATEGORY_MAP: Record<string, string> = {
+  P: "PM",
+  R: "Repair",
+  S: "Stock",
+}
+
+function fmtCategory(value: string | null | undefined) {
+  if (!value) return "—"
+  return CATEGORY_MAP[value.toUpperCase()] ?? value
+}
+
 function fmtDate(iso: string | null | undefined) {
   if (!iso) return "—"
   return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
@@ -26,7 +37,7 @@ export function OrderDetailModal({ transaction: t, onClose }: OrderDetailModalPr
     { label: "AX Part No.",   value: t.axPartNumber ?? "—", mono: true  },
     { label: "Part Name",         value: t.partName     ?? "—", mono: false },
     { label: "Qty",               value: t.qty != null ? `${t.qty} pcs` : "—", mono: false },
-    { label: "Category",          value: t.category         ?? "—", mono: false },
+    { label: "Category",          value: fmtCategory(t.category),    mono: false },
     { label: "Unit Price",        value: fmt(t.unitPrice),           mono: false },
     { label: "Total Price",       value: fmt(t.totalPrice),          mono: false },
     { label: "Invoice Date",      value: fmtDate(t.invoiceDate),     mono: false },
