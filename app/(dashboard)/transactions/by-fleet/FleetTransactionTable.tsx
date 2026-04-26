@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { Pagination } from "@/components/dashboard/Pagination"
 
 function fmt(value: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -44,15 +45,20 @@ export default function FleetTransactionTable({
   totalCount,
   totalPrice,
 }: Props) {
-  const [search, setSearch] = useState("")
+  const [search, setSearch]     = useState("")
+  const [page, setPage]         = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   const filtered = fleets.filter((f) => {
     const q = search.toLowerCase()
     return (
       f.fleet.toLowerCase().includes(q) ||
+      (f.fleetNumber ?? "").toLowerCase().includes(q) ||
       (f.serialNumber ?? "").toLowerCase().includes(q)
     )
   })
+
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize)
 
   return (
     <div className="space-y-5">
@@ -94,7 +100,7 @@ export default function FleetTransactionTable({
           type="text"
           placeholder="Search by fleet or serial number..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setPage(1) }}
           className="flex-1 min-w-48 sm:max-w-72 px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#367C2B] bg-white"
         />
       </div>
@@ -124,7 +130,7 @@ export default function FleetTransactionTable({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filtered.map((row) => (
+                {paginated.map((row) => (
                   <tr key={row.fleet} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-5 py-4 font-bold text-gray-900 whitespace-nowrap">{row.fleetNumber ?? row.fleet}</td>
                     <td className="px-5 py-4 font-mono text-gray-500">{row.serialNumber ?? "—"}</td>
@@ -160,6 +166,14 @@ export default function FleetTransactionTable({
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            total={filtered.length}
+            page={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(s) => { setPageSize(s); setPage(1) }}
+          />
         </div>
       )}
     </div>

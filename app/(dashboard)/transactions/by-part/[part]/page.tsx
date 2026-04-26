@@ -29,6 +29,7 @@ export default async function PartDetailPage({ params }: { params: Promise<{ par
         category: true,
         qty: true,
         totalPrice: true,
+        packingSlipDate: true,
         invoiceDate: true,
         deviceNumber: true,
       },
@@ -54,6 +55,7 @@ export default async function PartDetailPage({ params }: { params: Promise<{ par
     totalPrice: number
     pmPrice: number
     repairPrice: number
+    latestPackingSlipDate: Date | null
     latestDate: Date | null
   }
 
@@ -76,7 +78,7 @@ export default async function PartDetailPage({ params }: { params: Promise<{ par
       pmCount: 0, repairCount: 0,
       pmQty: 0, repairQty: 0,
       qty: 0, totalPrice: 0, pmPrice: 0, repairPrice: 0,
-      latestDate: null,
+      latestPackingSlipDate: null, latestDate: null,
     }
     fleetMap.set(key, {
       pmCount:     cur.pmCount     + (isPM     ? 1 : 0),
@@ -87,6 +89,12 @@ export default async function PartDetailPage({ params }: { params: Promise<{ par
       totalPrice:  cur.totalPrice  + price,
       pmPrice:     cur.pmPrice     + (isPM     ? price : 0),
       repairPrice: cur.repairPrice + (isRepair ? price : 0),
+      latestPackingSlipDate:
+        t.packingSlipDate
+          ? cur.latestPackingSlipDate == null || t.packingSlipDate > cur.latestPackingSlipDate
+            ? t.packingSlipDate
+            : cur.latestPackingSlipDate
+          : cur.latestPackingSlipDate,
       latestDate:
         t.invoiceDate
           ? cur.latestDate == null || t.invoiceDate > cur.latestDate
@@ -111,6 +119,7 @@ export default async function PartDetailPage({ params }: { params: Promise<{ par
         : "O",
       qty: agg.qty,
       totalPrice: agg.totalPrice,
+      latestPackingSlipDate: agg.latestPackingSlipDate?.toISOString() ?? null,
       latestDate: agg.latestDate?.toISOString() ?? null,
     }))
 

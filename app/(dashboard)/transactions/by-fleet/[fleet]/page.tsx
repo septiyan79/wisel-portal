@@ -31,6 +31,7 @@ export default async function FleetDetailPage({ params }: { params: Promise<{ fl
         category: true,
         qty: true,
         totalPrice: true,
+        packingSlipDate: true,
         invoiceDate: true,
       },
     }),
@@ -49,6 +50,7 @@ export default async function FleetDetailPage({ params }: { params: Promise<{ fl
     otherCount: number
     qty: number
     totalPrice: number
+    latestPackingSlipDate: Date | null
     latestDate: Date | null
   }
 
@@ -66,7 +68,7 @@ export default async function FleetDetailPage({ params }: { params: Promise<{ fl
     const cur = partMap.get(key) ?? {
       partName: t.partName ?? null,
       pmCount: 0, repairCount: 0, otherCount: 0,
-      qty: 0, totalPrice: 0, latestDate: null,
+      qty: 0, totalPrice: 0, latestPackingSlipDate: null, latestDate: null,
     }
     partMap.set(key, {
       partName: cur.partName ?? t.partName ?? null,
@@ -75,6 +77,12 @@ export default async function FleetDetailPage({ params }: { params: Promise<{ fl
       otherCount:  cur.otherCount  + (!isPM && !isRepair ? 1 : 0),
       qty:         cur.qty         + (t.qty ?? 0),
       totalPrice:  cur.totalPrice  + price,
+      latestPackingSlipDate:
+        t.packingSlipDate
+          ? cur.latestPackingSlipDate == null || t.packingSlipDate > cur.latestPackingSlipDate
+            ? t.packingSlipDate
+            : cur.latestPackingSlipDate
+          : cur.latestPackingSlipDate,
       latestDate:
         t.invoiceDate
           ? cur.latestDate == null || t.invoiceDate > cur.latestDate
@@ -100,6 +108,7 @@ export default async function FleetDetailPage({ params }: { params: Promise<{ fl
         : "O",
       qty: agg.qty,
       totalPrice: agg.totalPrice,
+      latestPackingSlipDate: agg.latestPackingSlipDate?.toISOString() ?? null,
       latestDate: agg.latestDate?.toISOString() ?? null,
     }))
 

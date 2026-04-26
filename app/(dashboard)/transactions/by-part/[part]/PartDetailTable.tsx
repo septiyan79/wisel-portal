@@ -42,6 +42,7 @@ export type FleetRow = {
   category: CategoryCode
   qty: number
   totalPrice: number
+  latestPackingSlipDate: string | null
   latestDate: string | null
 }
 
@@ -139,6 +140,7 @@ export default function PartDetailTable({
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Category</th>
                   <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Qty</th>
                   <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Price</th>
+                  <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Packing Slip Date</th>
                   <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Invoice Date</th>
                 </tr>
               </thead>
@@ -156,6 +158,9 @@ export default function PartDetailTable({
                     </td>
                     <td className="px-5 py-4 text-right font-bold text-gray-900 whitespace-nowrap">
                       {fmt(row.totalPrice)}
+                    </td>
+                    <td className="px-5 py-4 text-right text-xs text-gray-400 whitespace-nowrap">
+                      {fmtDate(row.latestPackingSlipDate)}
                     </td>
                     <td className="px-5 py-4 text-right text-xs text-gray-400 whitespace-nowrap">
                       {fmtDate(row.latestDate)}

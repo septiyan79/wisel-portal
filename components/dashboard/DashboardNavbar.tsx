@@ -320,10 +320,10 @@ export function DashboardNavbar({ customerAccount, customerName, role }: Dashboa
         <div className="bg-[#3d3d3d] px-4 md:px-6 py-2.5 md:py-4 flex items-center gap-4">
 
           {/* New Part Search — mobile left */}
-          <button className="md:hidden flex items-center gap-2 border-0 md:border-2 border-white text-white text-sm font-semibold px-3 py-1 hover:bg-white/10 transition-colors">
+          <a href="https://partscatalog.deere.com/jdrc/" target="_blank" rel="noopener noreferrer" className="md:hidden flex items-center gap-2 border-0 md:border-2 border-white text-white text-sm font-semibold px-3 py-1 hover:bg-white/10 transition-colors">
             <ShoppingCart size={14} />
             New Part Search
-          </button>
+          </a>
 
           {/* Spacer: logo container (w-60) + stripe (22px) + ml-8 (32px) - px-6 (24px) = ~270px */}
           <div className="hidden md:block w-14 shrink-0" />
@@ -337,10 +337,10 @@ export function DashboardNavbar({ customerAccount, customerName, role }: Dashboa
           <div className="ml-auto flex items-center gap-1">
 
             {/* New Part Search — desktop right */}
-            <button className="hidden md:flex items-center gap-2 border-2 border-white text-white text-sm font-semibold px-5 py-2 hover:bg-white/10 transition-colors">
+            <a href="https://partscatalog.deere.com/jdrc/" target="_blank" rel="noopener noreferrer" className="hidden md:flex items-center gap-2 border-2 border-white text-white text-sm font-semibold px-5 py-2 hover:bg-white/10 transition-colors">
               <ShoppingCart size={14} />
               New Part Search
-            </button>
+            </a>
 
             {/* Cart — always visible */}
             <button className="relative flex items-center px-3 md:px-4 py-1 text-gray-300 hover:text-white transition-colors">
