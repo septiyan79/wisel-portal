@@ -18,6 +18,7 @@ export default async function TransactionSummaryPage() {
     select: {
       totalPrice: true,
       qty: true,
+      category: true,
       invoiceDate: true,
       partNumber: true,
       partName: true,
@@ -26,8 +27,8 @@ export default async function TransactionSummaryPage() {
   })
 
   const totalValue = raw.reduce((sum, t) => sum + (t.totalPrice ?? 0), 0)
-  const totalQty = raw.reduce((sum, t) => sum + (t.qty ?? 0), 0)
-  const totalTx = raw.length
+  const totalRepair = raw.filter((t) => t.category === "R").length
+  const totalPM = raw.filter((t) => t.category === "P").length
 
   // Monthly breakdown
   const monthMap = new Map<string, { count: number; value: number }>()
@@ -73,12 +74,12 @@ export default async function TransactionSummaryPage() {
       {/* KPI cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white border border-gray-200 rounded-lg px-5 py-4">
-          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Total Transactions</p>
-          <p className="mt-1 text-2xl font-black text-gray-900">{totalTx.toLocaleString("id-ID")}</p>
+          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Total Repair</p>
+          <p className="mt-1 text-2xl font-black text-gray-900">{totalRepair.toLocaleString("id-ID")}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg px-5 py-4">
-          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Total Qty</p>
-          <p className="mt-1 text-2xl font-black text-gray-900">{totalQty.toLocaleString("id-ID")}</p>
+          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Total PM</p>
+          <p className="mt-1 text-2xl font-black text-gray-900">{totalPM.toLocaleString("id-ID")}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg px-5 py-4">
           <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Total Value</p>

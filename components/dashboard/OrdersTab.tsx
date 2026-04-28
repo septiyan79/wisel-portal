@@ -62,6 +62,8 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
   const [deleting, setDeleting]     = useState(false)
   const [importing, setImporting]   = useState(false)
   const [search, setSearch]         = useState("")
+  const [dateFrom, setDateFrom]     = useState("")
+  const [dateTo, setDateTo]         = useState("")
   const [page, setPage]             = useState(1)
   const [pageSize, setPageSize]     = useState(10)
   const [customers, setCustomers]   = useState<CustomerOption[]>([])
@@ -76,14 +78,22 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
   }, [role])
 
   const filtered = transactions.filter((t) => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    return (
-      t.soNumber?.toLowerCase().includes(q) ||
-      t.partName?.toLowerCase().includes(q) ||
-      t.partNumber?.toLowerCase().includes(q) ||
-      t.deviceNumber?.toLowerCase().includes(q)
-    )
+    if (search) {
+      const q = search.toLowerCase()
+      const matchText =
+        t.soNumber?.toLowerCase().includes(q) ||
+        t.partName?.toLowerCase().includes(q) ||
+        t.partNumber?.toLowerCase().includes(q) ||
+        t.deviceNumber?.toLowerCase().includes(q)
+      if (!matchText) return false
+    }
+    if (dateFrom && t.invoiceDate) {
+      if (t.invoiceDate.slice(0, 10) < dateFrom) return false
+    }
+    if (dateTo && t.invoiceDate) {
+      if (t.invoiceDate.slice(0, 10) > dateTo) return false
+    }
+    return true
   })
 
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize)
@@ -170,7 +180,7 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
         ))}
       </div>
 
-      {/* Toolbar: search + tambah */}
+      {/* Toolbar: search + date range + tambah */}
       <div className="flex items-center gap-3 flex-wrap">
         <input
           type="text"
@@ -179,6 +189,31 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
           onChange={(e) => { setSearch(e.target.value); setPage(1) }}
           className="flex-1 min-w-48 sm:max-w-72 px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#367C2B] bg-white"
         />
+        <div className="flex items-center gap-2 shrink-0">
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => { setDateFrom(e.target.value); setPage(1) }}
+            className="px-3 py-2 text-sm border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#367C2B] bg-white"
+            title="Invoice Date from"
+          />
+          <span className="text-gray-400 text-sm">–</span>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => { setDateTo(e.target.value); setPage(1) }}
+            className="px-3 py-2 text-sm border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#367C2B] bg-white"
+            title="Invoice Date to"
+          />
+          {(dateFrom || dateTo) && (
+            <button
+              onClick={() => { setDateFrom(""); setDateTo(""); setPage(1) }}
+              className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1 rounded hover:bg-gray-100"
+            >
+              Clear
+            </button>
+          )}
+        </div>
         <button
           onClick={() => setImporting(true)}
           className="flex items-center gap-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg transition-colors shrink-0"
