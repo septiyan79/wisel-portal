@@ -38,36 +38,51 @@ model Unit {
   fleetNumber     String?
   model           String?
   customerAccount String?
-  customer        Customer?     @relation(fields: [customerAccount], references: [customerAccount])
-  transactions    Transaction[]
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  customer          Customer?         @relation(fields: [customerAccount], references: [customerAccount])
+  transactions      Transaction[]
+  stockAssignments  StockAssignment[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 }
 
 model Transaction {
-  id              String    @id @default(cuid())
-  externalId      String?   @unique
-  source          String
-  isDeleted       Boolean   @default(false)
-  deletedAt       DateTime?
-  soNumber        String?
-  quotation       String?
-  poNumber        String?
-  partNumber      String?
-  axPartNumber    String?
-  partName        String?
-  qty             Int?
-  category        String?
-  invoiceDate     DateTime?
-  packingSlipDate DateTime?
-  unitPrice       Float?
-  totalPrice      Float?
-  customer        Customer? @relation(fields: [customerAccount], references: [customerAccount])
-  customerAccount String?
-  unit            Unit?     @relation(fields: [deviceNumber], references: [deviceNumber])
-  deviceNumber    String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id               String            @id @default(cuid())
+  externalId       String?           @unique
+  source           String
+  isDeleted        Boolean           @default(false)
+  deletedAt        DateTime?
+  soNumber         String?
+  quotation        String?
+  poNumber         String?
+  partNumber       String?
+  axPartNumber     String?
+  partName         String?
+  qty              Int?
+  category         String?
+  invoiceDate      DateTime?
+  packingSlipDate  DateTime?
+  unitPrice        Float?
+  totalPrice       Float?
+  customer         Customer?         @relation(fields: [customerAccount], references: [customerAccount])
+  customerAccount  String?
+  unit             Unit?             @relation(fields: [deviceNumber], references: [deviceNumber])
+  deviceNumber     String?
+  stockAssignments StockAssignment[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model StockAssignment {
+  id                 String      @id @default(cuid())
+  stockTransactionId String
+  targetDeviceNumber String
+  qty                Int
+  note               String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  stockTransaction   Transaction @relation(fields: [stockTransactionId], references: [id])
+  targetUnit         Unit        @relation(fields: [targetDeviceNumber], references: [deviceNumber])
 }
 
 model SyncLog {

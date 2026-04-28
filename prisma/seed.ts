@@ -46,10 +46,18 @@ async function main() {
     create: { customerAccount: "ADMIN", password: hashed, role: "admin" },
   })
 
+  // ── Unit STOCK placeholder ────────────────────────────────────
+  await prisma.unit.upsert({
+    where: { deviceNumber: "STOCK" },
+    update: {},
+    create: { deviceNumber: "STOCK", model: "Stock Gudang" },
+  })
+
   console.log("Seed done:")
   console.log("  customer → W0001 / password123")
   console.log("  customer → W0002 / password123")
   console.log("  admin    → ADMIN / password123")
+  console.log("  unit     → STOCK (Stock Gudang)")
 }
 
 main()

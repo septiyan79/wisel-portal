@@ -7,8 +7,8 @@ export default async function TransactionsPage() {
 
   const where =
     session!.user.role === "customer"
-      ? { isDeleted: false, customerAccount: session!.user.customerAccount }
-      : { isDeleted: false }
+      ? { isDeleted: false, customerAccount: session!.user.customerAccount, NOT: { category: "S" } }
+      : { isDeleted: false, NOT: { category: "S" } }
 
   const raw = await prisma.transaction.findMany({
     where,

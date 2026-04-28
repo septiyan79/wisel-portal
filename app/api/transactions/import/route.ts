@@ -84,7 +84,11 @@ export async function POST(req: Request) {
     const rowNum = i + 2 // baris 1 = header
 
     try {
-      const deviceNumber = row.deviceNumber ? String(row.deviceNumber).trim() : null
+      const rawCategory = row.category ? String(row.category).trim().toUpperCase() : null
+      const rawDevice   = row.deviceNumber ? String(row.deviceNumber).trim() : null
+
+      // Transaksi stock: deviceNumber otomatis STOCK
+      const deviceNumber = rawCategory === "S" && !rawDevice ? "STOCK" : rawDevice
 
       // Pastikan unit ada jika deviceNumber diisi
       if (deviceNumber) {
@@ -105,7 +109,7 @@ export async function POST(req: Request) {
           partNumber:      row.partNumber   ? String(row.partNumber).trim()   : null,
           axPartNumber:    row.axPartNumber ? String(row.axPartNumber).trim() : null,
           partName:        row.partName     ? String(row.partName).trim()     : null,
-          category:        row.category     ? String(row.category).trim()     : null,
+          category:        rawCategory,
           qty:             row.qty          ? Number(row.qty)                 : null,
           invoiceDate:     parseDate(row.invoiceDate)     ? new Date(parseDate(row.invoiceDate)!)     : null,
           packingSlipDate: parseDate(row.packingSlipDate) ? new Date(parseDate(row.packingSlipDate)!) : null,

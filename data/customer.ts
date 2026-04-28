@@ -32,7 +32,9 @@ export const STATUS_MAP: Record<string, StatusConfig> = {
 }
 
 const TRANSACTION_CHILDREN: DashboardNavChild[] = [
-  { id: "by-fleet",  label: "By Fleet Number",      href: "/transactions/by-fleet" },
+  { id: "all",       label: "All Transactions",      href: "/transactions" },
+  { id: "stock",     label: "Stock",                 href: "/transactions/stock" },
+  { id: "by-fleet",  label: "By Fleet Number",       href: "/transactions/by-fleet" },
   { id: "by-part",   label: "By Part Number",        href: "/transactions/by-part" },
   { id: "summary",   label: "Transaction Summary",   href: "/transactions/summary" },
 ]

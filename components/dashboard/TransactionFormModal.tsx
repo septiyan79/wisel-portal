@@ -44,6 +44,13 @@ const EMPTY: FormState = {
   qty: "", category: "", invoiceDate: "", packingSlipDate: "", unitPrice: "", totalPrice: "", deviceNumber: "",
 }
 
+const CATEGORY_OPTIONS = [
+  { value: "", label: "— Select category —" },
+  { value: "P", label: "PM (Preventive Maintenance)" },
+  { value: "R", label: "Repair" },
+  { value: "S", label: "Stock" },
+]
+
 const FIELDS: { key: keyof FormState; label: string; type: string; placeholder: string }[] = [
   { key: "soNumber",     label: "SO Number",         type: "text",   placeholder: "e.g. SO-2025-001" },
   { key: "quotation",    label: "Quotation",         type: "text",   placeholder: "Optional" },
@@ -52,7 +59,6 @@ const FIELDS: { key: keyof FormState; label: string; type: string; placeholder: 
   { key: "axPartNumber", label: "AX Part Number",    type: "text",   placeholder: "Optional" },
   { key: "partName",     label: "Part Name",         type: "text",   placeholder: "e.g. Oil Filter" },
   { key: "qty",             label: "Qty",               type: "number", placeholder: "0" },
-  { key: "category",        label: "Category",          type: "text",   placeholder: "Optional" },
   { key: "invoiceDate",     label: "Invoice Date",      type: "date",   placeholder: "" },
   { key: "packingSlipDate", label: "Packing Slip Date", type: "date",   placeholder: "" },
   { key: "unitPrice",    label: "Unit Price (Rp)",   type: "number", placeholder: "0" },
@@ -135,6 +141,19 @@ export function TransactionFormModal({ initial, role, onClose, onSaved }: Transa
         })
       )
     }
+  }
+
+  function setCategoryField(index: number, value: string) {
+    setForms((prev) =>
+      prev.map((form, i) => {
+        if (i !== index) return form
+        return {
+          ...form,
+          category: value,
+          deviceNumber: value === "S" ? "STOCK" : form.deviceNumber === "STOCK" ? "" : form.deviceNumber,
+        }
+      })
+    )
   }
 
   function addItem() {
@@ -299,31 +318,55 @@ export function TransactionFormModal({ initial, role, onClose, onSaved }: Transa
                       </div>
                     ))}
 
+                    {/* Dropdown Category */}
+                    <div className="col-span-1">
+                      <label className="block text-xs font-semibold text-gray-500 mb-1.5">
+                        Category
+                      </label>
+                      <select
+                        value={form.category}
+                        onChange={(e) => setCategoryField(index, e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#367C2B] focus:border-transparent bg-white"
+                      >
+                        {CATEGORY_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
                     {/* Dropdown Unit */}
                     <div className="col-span-1">
                       <label className="block text-xs font-semibold text-gray-500 mb-1.5">
                         Unit / Device No.
                       </label>
-                      <select
-                        value={form.deviceNumber}
-                        onChange={(e) =>
-                          setForms((prev) =>
-                            prev.map((f, i) =>
-                              i === index ? { ...f, deviceNumber: e.target.value } : f
+                      {form.category === "S" ? (
+                        <div className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-500">
+                          STOCK — Stock Gudang
+                        </div>
+                      ) : (
+                        <select
+                          value={form.deviceNumber}
+                          onChange={(e) =>
+                            setForms((prev) =>
+                              prev.map((f, i) =>
+                                i === index ? { ...f, deviceNumber: e.target.value } : f
+                              )
                             )
-                          )
-                        }
-                        className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#367C2B] focus:border-transparent bg-white"
-                      >
-                        <option value="">— None / select unit —</option>
-                        {units.map((u) => (
-                          <option key={u.id} value={u.deviceNumber}>
-                            {u.deviceNumber}
-                            {u.model ? ` — ${u.model}` : ""}
-                            {u.fleetNumber ? ` (${u.fleetNumber})` : ""}
-                          </option>
-                        ))}
-                      </select>
+                          }
+                          className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#367C2B] focus:border-transparent bg-white"
+                        >
+                          <option value="">— None / select unit —</option>
+                          {units
+                            .filter((u) => u.deviceNumber !== "STOCK")
+                            .map((u) => (
+                              <option key={u.id} value={u.deviceNumber}>
+                                {u.deviceNumber}
+                                {u.model ? ` — ${u.model}` : ""}
+                                {u.fleetNumber ? ` (${u.fleetNumber})` : ""}
+                              </option>
+                            ))}
+                        </select>
+                      )}
                     </div>
                   </div>
                 </div>

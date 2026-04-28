@@ -10,8 +10,8 @@ export async function GET() {
 
   const where =
     session.user.role === "customer"
-      ? { isDeleted: false, customerAccount: session.user.customerAccount }
-      : { isDeleted: false }
+      ? { isDeleted: false, customerAccount: session.user.customerAccount, NOT: { category: "S" } }
+      : { isDeleted: false, NOT: { category: "S" } }
 
   const transactions = await prisma.transaction.findMany({
     where,

@@ -7,8 +7,8 @@ export default async function TransactionByFleetPage() {
 
   const where =
     session!.user.role === "customer"
-      ? { isDeleted: false, customerAccount: session!.user.customerAccount }
-      : { isDeleted: false }
+      ? { isDeleted: false, customerAccount: session!.user.customerAccount, NOT: { deviceNumber: "STOCK" } }
+      : { isDeleted: false, NOT: { deviceNumber: "STOCK" } }
 
   const [raw, units] = await Promise.all([
     prisma.transaction.findMany({
@@ -20,6 +20,7 @@ export default async function TransactionByFleetPage() {
       },
     }),
     prisma.unit.findMany({
+      where: { NOT: { deviceNumber: "STOCK" } },
       select: {
         deviceNumber: true,
         fleetNumber: true,
