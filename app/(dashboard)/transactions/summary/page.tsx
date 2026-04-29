@@ -8,27 +8,37 @@ function fmt(value: number) {
 export default async function TransactionSummaryPage() {
   const session = await auth()
 
-  const where =
+  const txWhere =
     session!.user.role === "customer"
-      ? { isDeleted: false, customerAccount: session!.user.customerAccount }
-      : { isDeleted: false }
+      ? { isDeleted: false, customerAccount: session!.user.customerAccount, NOT: { category: "S" } }
+      : { isDeleted: false, NOT: { category: "S" } }
 
-  const raw = await prisma.transaction.findMany({
-    where,
-    select: {
-      totalPrice: true,
-      qty: true,
-      category: true,
-      invoiceDate: true,
-      partNumber: true,
-      partName: true,
-      deviceNumber: true,
-    },
-  })
+  const assignWhere =
+    session!.user.role === "customer"
+      ? { stockTransaction: { isDeleted: false, customerAccount: session!.user.customerAccount } }
+      : { stockTransaction: { isDeleted: false } }
 
-  const totalValue = raw.reduce((sum, t) => sum + (t.totalPrice ?? 0), 0)
-  const totalRepair = raw.filter((t) => t.category === "R").length
-  const totalPM = raw.filter((t) => t.category === "P").length
+  const [raw, rawAssignments] = await Promise.all([
+    prisma.transaction.findMany({
+      where: txWhere,
+      select: { totalPrice: true, qty: true, category: true, invoiceDate: true, partNumber: true, partName: true, deviceNumber: true },
+    }),
+    prisma.stockAssignment.findMany({
+      where: assignWhere,
+      select: {
+        targetDeviceNumber: true,
+        qty: true,
+        stockTransaction: { select: { partNumber: true, partName: true, unitPrice: true, invoiceDate: true } },
+      },
+    }),
+  ])
+
+  const totalValue =
+    raw.reduce((sum, t) => sum + (t.totalPrice ?? 0), 0) +
+    rawAssignments.reduce((sum, a) => sum + (a.stockTransaction.unitPrice != null ? a.qty * a.stockTransaction.unitPrice : 0), 0)
+
+  const totalRepair = raw.filter((t) => t.category === "R").length + rawAssignments.length
+  const totalPM     = raw.filter((t) => t.category === "P").length
 
   // Monthly breakdown
   const monthMap = new Map<string, { count: number; value: number }>()
@@ -37,6 +47,14 @@ export default async function TransactionSummaryPage() {
     const key = t.invoiceDate.toLocaleDateString("id-ID", { month: "long", year: "numeric" })
     const cur = monthMap.get(key) ?? { count: 0, value: 0 }
     monthMap.set(key, { count: cur.count + 1, value: cur.value + (t.totalPrice ?? 0) })
+  }
+  for (const a of rawAssignments) {
+    const date = a.stockTransaction.invoiceDate
+    if (!date) continue
+    const key = date.toLocaleDateString("id-ID", { month: "long", year: "numeric" })
+    const price = a.stockTransaction.unitPrice != null ? a.qty * a.stockTransaction.unitPrice : 0
+    const cur = monthMap.get(key) ?? { count: 0, value: 0 }
+    monthMap.set(key, { count: cur.count + 1, value: cur.value + price })
   }
   const months = [...monthMap.entries()]
     .sort(([, a], [, b]) => b.value - a.value)
@@ -49,16 +67,28 @@ export default async function TransactionSummaryPage() {
     const cur = partMap.get(key) ?? { name: t.partName || "—", value: 0, count: 0 }
     partMap.set(key, { ...cur, value: cur.value + (t.totalPrice ?? 0), count: cur.count + 1 })
   }
+  for (const a of rawAssignments) {
+    const key = a.stockTransaction.partNumber || "—"
+    const price = a.stockTransaction.unitPrice != null ? a.qty * a.stockTransaction.unitPrice : 0
+    const cur = partMap.get(key) ?? { name: a.stockTransaction.partName || "—", value: 0, count: 0 }
+    partMap.set(key, { ...cur, value: cur.value + price, count: cur.count + 1 })
+  }
   const topParts = [...partMap.entries()]
     .sort(([, a], [, b]) => b.value - a.value)
     .slice(0, 5)
 
-  // Top 5 fleets by total value
+  // Top 5 fleets by total value (assignments pakai targetDeviceNumber, bukan "STOCK")
   const fleetMap = new Map<string, { value: number; count: number }>()
   for (const t of raw) {
     const key = t.deviceNumber || "—"
     const cur = fleetMap.get(key) ?? { value: 0, count: 0 }
     fleetMap.set(key, { value: cur.value + (t.totalPrice ?? 0), count: cur.count + 1 })
+  }
+  for (const a of rawAssignments) {
+    const key = a.targetDeviceNumber
+    const price = a.stockTransaction.unitPrice != null ? a.qty * a.stockTransaction.unitPrice : 0
+    const cur = fleetMap.get(key) ?? { value: 0, count: 0 }
+    fleetMap.set(key, { value: cur.value + price, count: cur.count + 1 })
   }
   const topFleets = [...fleetMap.entries()]
     .sort(([, a], [, b]) => b.value - a.value)

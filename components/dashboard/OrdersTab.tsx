@@ -324,6 +324,11 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
                           manual
                         </span>
                       )}
+                      {t.source === "stock_assignment" && (
+                        <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded mt-0.5 inline-block">
+                          stock
+                        </span>
+                      )}
                     </td>
                     <td className="px-5 py-4 max-w-48">
                       <p className="text-sm font-semibold text-gray-900 truncate">{t.partName ?? "—"}</p>

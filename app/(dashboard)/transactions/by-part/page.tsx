@@ -5,22 +5,29 @@ import PartTransactionTable from "./PartTransactionTable"
 export default async function TransactionByPartPage() {
   const session = await auth()
 
-  const where =
+  const txWhere =
     session!.user.role === "customer"
-      ? { isDeleted: false, customerAccount: session!.user.customerAccount }
-      : { isDeleted: false }
+      ? { isDeleted: false, customerAccount: session!.user.customerAccount, NOT: { category: "S" } }
+      : { isDeleted: false, NOT: { category: "S" } }
 
-  const raw = await prisma.transaction.findMany({
-    where,
-    select: {
-      partNumber: true,
-      axPartNumber: true,
-      partName: true,
-      category: true,
-      qty: true,
-      totalPrice: true,
-    },
-  })
+  const assignWhere =
+    session!.user.role === "customer"
+      ? { stockTransaction: { isDeleted: false, customerAccount: session!.user.customerAccount } }
+      : { stockTransaction: { isDeleted: false } }
+
+  const [raw, rawAssignments] = await Promise.all([
+    prisma.transaction.findMany({
+      where: txWhere,
+      select: { partNumber: true, axPartNumber: true, partName: true, category: true, qty: true, totalPrice: true },
+    }),
+    prisma.stockAssignment.findMany({
+      where: assignWhere,
+      select: {
+        qty: true,
+        stockTransaction: { select: { partNumber: true, axPartNumber: true, partName: true, unitPrice: true } },
+      },
+    }),
+  ])
 
   type Agg = {
     partName: string | null
@@ -44,16 +51,11 @@ export default async function TransactionByPartPage() {
     const isPM = t.category === "P"
     const isRepair = t.category === "R"
 
-    const cur = groups.get(key) ?? {
-      partName: t.partName ?? null,
-      pmPrice: 0, pmQty: 0,
-      repairPrice: 0, repairQty: 0,
-      totalPrice: 0, totalQty: 0,
-    }
+    const cur = groups.get(key) ?? { partName: t.partName ?? null, pmPrice: 0, pmQty: 0, repairPrice: 0, repairQty: 0, totalPrice: 0, totalQty: 0 }
     groups.set(key, {
-      partName: cur.partName ?? t.partName ?? null,
-      pmPrice:    cur.pmPrice    + (isPM     ? price : 0),
-      pmQty:      cur.pmQty      + (isPM     ? qty   : 0),
+      partName:    cur.partName ?? t.partName ?? null,
+      pmPrice:     cur.pmPrice     + (isPM     ? price : 0),
+      pmQty:       cur.pmQty       + (isPM     ? qty   : 0),
       repairPrice: cur.repairPrice + (isRepair ? price : 0),
       repairQty:   cur.repairQty   + (isRepair ? qty   : 0),
       totalPrice:  cur.totalPrice  + price,
@@ -63,6 +65,25 @@ export default async function TransactionByPartPage() {
     if (isPM)     { globalPMCount++;     globalPMPrice     += price }
     if (isRepair) { globalRepairCount++; globalRepairPrice += price }
     globalTotalPrice += price
+  }
+
+  // Assignment rows dihitung sebagai Repair
+  for (const a of rawAssignments) {
+    const p = a.stockTransaction
+    const key = p.partNumber || p.axPartNumber || "—"
+    const price = p.unitPrice != null ? a.qty * p.unitPrice : 0
+    const cur = groups.get(key) ?? { partName: p.partName ?? null, pmPrice: 0, pmQty: 0, repairPrice: 0, repairQty: 0, totalPrice: 0, totalQty: 0 }
+    groups.set(key, {
+      ...cur,
+      partName:    cur.partName ?? p.partName ?? null,
+      repairPrice: cur.repairPrice + price,
+      repairQty:   cur.repairQty   + a.qty,
+      totalPrice:  cur.totalPrice  + price,
+      totalQty:    cur.totalQty    + a.qty,
+    })
+    globalRepairCount++
+    globalRepairPrice += price
+    globalTotalPrice  += price
   }
 
   const parts = [...groups.entries()]
@@ -89,7 +110,7 @@ export default async function TransactionByPartPage() {
         pmPrice={globalPMPrice}
         repairCount={globalRepairCount}
         repairPrice={globalRepairPrice}
-        totalCount={raw.length}
+        totalCount={raw.length + rawAssignments.length}
         totalPrice={globalTotalPrice}
       />
     </>

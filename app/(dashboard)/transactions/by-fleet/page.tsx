@@ -5,27 +5,32 @@ import FleetTransactionTable from "./FleetTransactionTable"
 export default async function TransactionByFleetPage() {
   const session = await auth()
 
-  const where =
+  const txWhere =
     session!.user.role === "customer"
       ? { isDeleted: false, customerAccount: session!.user.customerAccount, NOT: { deviceNumber: "STOCK" } }
       : { isDeleted: false, NOT: { deviceNumber: "STOCK" } }
 
-  const [raw, units] = await Promise.all([
+  const assignWhere =
+    session!.user.role === "customer"
+      ? { stockTransaction: { isDeleted: false, customerAccount: session!.user.customerAccount } }
+      : { stockTransaction: { isDeleted: false } }
+
+  const [raw, rawAssignments, units] = await Promise.all([
     prisma.transaction.findMany({
-      where,
+      where: txWhere,
+      select: { deviceNumber: true, category: true, totalPrice: true },
+    }),
+    prisma.stockAssignment.findMany({
+      where: assignWhere,
       select: {
-        deviceNumber: true,
-        category: true,
-        totalPrice: true,
+        targetDeviceNumber: true,
+        qty: true,
+        stockTransaction: { select: { unitPrice: true } },
       },
     }),
     prisma.unit.findMany({
       where: { NOT: { deviceNumber: "STOCK" } },
-      select: {
-        deviceNumber: true,
-        fleetNumber: true,
-        serialNumber: true,
-      },
+      select: { deviceNumber: true, fleetNumber: true, serialNumber: true },
     }),
   ])
 
@@ -66,6 +71,23 @@ export default async function TransactionByFleetPage() {
     globalTotalPrice += price
   }
 
+  // Assignment rows dihitung sebagai Repair
+  for (const a of rawAssignments) {
+    const key = a.targetDeviceNumber
+    const price = a.stockTransaction.unitPrice != null ? a.qty * a.stockTransaction.unitPrice : 0
+    const cur = groups.get(key) ?? { pmCount: 0, pmPrice: 0, repairCount: 0, repairPrice: 0, totalCount: 0, totalPrice: 0 }
+    groups.set(key, {
+      ...cur,
+      repairCount: cur.repairCount + 1,
+      repairPrice: cur.repairPrice + price,
+      totalCount:  cur.totalCount  + 1,
+      totalPrice:  cur.totalPrice  + price,
+    })
+    globalRepairCount++
+    globalRepairPrice += price
+    globalTotalPrice  += price
+  }
+
   const fleets = [...groups.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([fleet, agg]) => ({
@@ -89,7 +111,7 @@ export default async function TransactionByFleetPage() {
         pmPrice={globalPMPrice}
         repairCount={globalRepairCount}
         repairPrice={globalRepairPrice}
-        totalCount={raw.length}
+        totalCount={raw.length + rawAssignments.length}
         totalPrice={globalTotalPrice}
       />
     </>
