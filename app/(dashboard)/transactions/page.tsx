@@ -33,6 +33,7 @@ export default async function TransactionsPage() {
         packingSlipDate: true,
         unitPrice: true,
         totalPrice: true,
+        check: true,
         customerAccount: true,
         deviceNumber: true,
         source: true,
@@ -63,6 +64,7 @@ export default async function TransactionsPage() {
     ...t,
     invoiceDate:     t.invoiceDate?.toISOString()     ?? null,
     packingSlipDate: t.packingSlipDate?.toISOString() ?? null,
+    check:           t.check ?? null,
   }))
 
   const assignmentRows = rawAssignments.map((a) => {
@@ -78,9 +80,10 @@ export default async function TransactionsPage() {
       qty:             a.qty,
       category:        "R" as const,
       invoiceDate:     p.invoiceDate?.toISOString()     ?? null,
-      packingSlipDate: p.packingSlipDate?.toISOString() ?? null,
+      packingSlipDate: a.packingSlipDate?.toISOString() ?? null,
       unitPrice:       p.unitPrice,
       totalPrice:      p.unitPrice != null ? a.qty * p.unitPrice : null,
+      check:           a.check ?? null,
       customerAccount: p.customerAccount,
       deviceNumber:    a.targetDeviceNumber,
       source:          "stock_assignment",

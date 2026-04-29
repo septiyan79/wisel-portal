@@ -25,6 +25,7 @@ export type TransactionRow = {
   packingSlipDate: string | null
   unitPrice: number | null
   totalPrice: number | null
+  check: string | null
   customerAccount: string | null
   deviceNumber: string | null
   source: string

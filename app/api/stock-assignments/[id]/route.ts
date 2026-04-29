@@ -7,7 +7,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { id } = await params
-  const { targetDeviceNumber, qty, note } = await req.json()
+  const { targetDeviceNumber, qty, check, packingSlipDate } = await req.json()
 
   const assignment = await prisma.stockAssignment.findUnique({
     where: { id },
@@ -53,7 +53,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     data: {
       ...(targetDeviceNumber !== undefined && { targetDeviceNumber }),
       ...(qty != null && { qty: Number(qty) }),
-      ...(note !== undefined && { note: note || null }),
+      ...(check !== undefined && { check: check || null }),
+      ...(packingSlipDate !== undefined && { packingSlipDate: packingSlipDate ? new Date(packingSlipDate) : null }),
     },
     include: { targetUnit: { select: { deviceNumber: true, fleetNumber: true, model: true } } },
   })

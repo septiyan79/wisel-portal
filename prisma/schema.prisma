@@ -63,6 +63,7 @@ model Transaction {
   packingSlipDate  DateTime?
   unitPrice        Float?
   totalPrice       Float?
+  check            String?
   customer         Customer?         @relation(fields: [customerAccount], references: [customerAccount])
   customerAccount  String?
   unit             Unit?             @relation(fields: [deviceNumber], references: [deviceNumber])
@@ -77,7 +78,8 @@ model StockAssignment {
   stockTransactionId String
   targetDeviceNumber String
   qty                Int
-  note               String?
+  check              String?
+  packingSlipDate    DateTime?
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
 

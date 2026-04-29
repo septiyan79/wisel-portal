@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { X, Loader2, Plus, Trash2 } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { X, Loader2, Plus, Trash2, Info } from "lucide-react"
 import type { TransactionRow } from "./OrdersTab"
 
 type UnitOption = {
@@ -37,33 +37,42 @@ type FormState = {
   unitPrice: string
   totalPrice: string
   deviceNumber: string
+  check: string
 }
 
 const EMPTY: FormState = {
   soNumber: "", quotation: "", poNumber: "", partNumber: "", axPartNumber: "", partName: "",
-  qty: "", category: "", invoiceDate: "", packingSlipDate: "", unitPrice: "", totalPrice: "", deviceNumber: "",
+  qty: "", category: "R", invoiceDate: "", packingSlipDate: "", unitPrice: "", totalPrice: "",
+  deviceNumber: "", check: "",
 }
 
-const CATEGORY_OPTIONS = [
-  { value: "", label: "— Select category —" },
-  { value: "P", label: "PM (Preventive Maintenance)" },
-  { value: "R", label: "Repair" },
-  { value: "S", label: "Stock" },
+const CHECK_OPTIONS = [
+  { value: "", label: "— Select notes —" },
+  { value: "Consumable", label: "Consumable" },
+  { value: "Accident", label: "Accident" },
+  { value: "Modification/improvement", label: "Modification/improvement" },
+  { value: "Other", label: "Other" },
 ]
 
-const FIELDS: { key: keyof FormState; label: string; type: string; placeholder: string }[] = [
-  { key: "soNumber",     label: "SO Number",         type: "text",   placeholder: "e.g. SO-2025-001" },
-  { key: "quotation",    label: "Quotation",         type: "text",   placeholder: "Optional" },
-  { key: "poNumber",     label: "PO Number",         type: "text",   placeholder: "Optional" },
-  { key: "partNumber",   label: "Part Number",       type: "text",   placeholder: "e.g. RE504836" },
-  { key: "axPartNumber", label: "AX Part Number",    type: "text",   placeholder: "Optional" },
-  { key: "partName",     label: "Part Name",         type: "text",   placeholder: "e.g. Oil Filter" },
-  { key: "qty",             label: "Qty",               type: "number", placeholder: "0" },
-  { key: "invoiceDate",     label: "Invoice Date",      type: "date",   placeholder: "" },
-  { key: "packingSlipDate", label: "Packing Slip Date", type: "date",   placeholder: "" },
-  { key: "unitPrice",    label: "Unit Price (Rp)",   type: "number", placeholder: "0" },
-  { key: "totalPrice",   label: "Total Price (Rp)",  type: "number", placeholder: "Auto-calculated from Qty × Unit Price" },
+const FIELDS: { key: keyof FormState; label: string; type: string; placeholder: string; info?: string }[] = [
+  { key: "quotation",       label: "Quotation",            type: "text",   placeholder: "Optional" },
+  { key: "poNumber",        label: "PO Number",            type: "text",   placeholder: "Optional" },
+  { key: "partNumber",      label: "Part Number",          type: "text",   placeholder: "e.g. RE504836" },
+  { key: "axPartNumber",    label: "Wisel Part Number",    type: "text",   placeholder: "Optional" },
+  { key: "partName",        label: "Part Name",            type: "text",   placeholder: "e.g. Oil Filter" },
+  { key: "qty",             label: "Qty",                  type: "number", placeholder: "0" },
+  { key: "invoiceDate",     label: "Invoice Date",         type: "date",   placeholder: "" },
+  { key: "packingSlipDate", label: "Packing Slip Date",    type: "date",   placeholder: "", info: "Tanggal Repair / Pasang" },
+  { key: "unitPrice",       label: "Unit Price (Rp)",      type: "number", placeholder: "0" },
+  { key: "totalPrice",      label: "Total Price (Rp)",     type: "number", placeholder: "Auto-calculated from Qty × Unit Price" },
 ]
+
+function formatUnitLabel(u: UnitOption) {
+  let label = u.deviceNumber
+  if (u.model) label += ` — ${u.model}`
+  if (u.fleetNumber) label += ` (${u.fleetNumber})`
+  return label
+}
 
 function toDateInput(iso: string | null | undefined) {
   if (!iso) return ""
@@ -71,7 +80,8 @@ function toDateInput(iso: string | null | undefined) {
 }
 
 function isFormEmpty(form: FormState): boolean {
-  return Object.values(form).every((v) => v === "" || v === "0")
+  const { category, check, ...rest } = form
+  return Object.values(rest).every((v) => v === "" || v === "0")
 }
 
 export function TransactionFormModal({ initial, role, onClose, onSaved }: TransactionFormModalProps) {
@@ -85,10 +95,17 @@ export function TransactionFormModal({ initial, role, onClose, onSaved }: Transa
   const [units, setUnits] = useState<UnitOption[]>([])
   const [customers, setCustomers] = useState<CustomerOption[]>([])
 
+  const [deviceSearches, setDeviceSearches] = useState<string[]>([""])
+  const [deviceDropdowns, setDeviceDropdowns] = useState<boolean[]>([false])
+  const [dropdownRects, setDropdownRects] = useState<Array<{ top: number; left: number; width: number } | null>>([null])
+  const deviceWrapperRefs = useRef<Array<HTMLDivElement | null>>([])
+  const formsRef = useRef(forms)
+  formsRef.current = forms
+
   useEffect(() => {
     fetch("/api/units")
       .then((r) => r.json())
-      .then((data: UnitOption[]) => setUnits(data))
+      .then((data: UnitOption[]) => setUnits(data.filter((u) => u.deviceNumber !== "STOCK")))
       .catch(() => {})
 
     if (isAdmin) {
@@ -102,26 +119,48 @@ export function TransactionFormModal({ initial, role, onClose, onSaved }: Transa
     }
   }, [isAdmin])
 
+  // When units load, update device search text for pre-filled deviceNumbers
+  useEffect(() => {
+    if (units.length > 0) {
+      setDeviceSearches((prev) =>
+        prev.map((s, i) => {
+          const dn = formsRef.current[i]?.deviceNumber
+          if (!dn || s !== dn) return s
+          const u = units.find((u) => u.deviceNumber === dn)
+          return u ? formatUnitLabel(u) : s
+        })
+      )
+    }
+  }, [units])
+
   useEffect(() => {
     if (initial) {
+      const dn = initial.deviceNumber ?? ""
       setForms([{
-        soNumber:     initial.soNumber     ?? "",
-        quotation:    initial.quotation    ?? "",
-        poNumber:     initial.poNumber     ?? "",
-        partNumber:   initial.partNumber   ?? "",
-        axPartNumber: initial.axPartNumber ?? "",
-        partName:     initial.partName     ?? "",
+        soNumber:        initial.soNumber        ?? "",
+        quotation:       initial.quotation        ?? "",
+        poNumber:        initial.poNumber         ?? "",
+        partNumber:      initial.partNumber       ?? "",
+        axPartNumber:    initial.axPartNumber     ?? "",
+        partName:        initial.partName         ?? "",
         qty:             initial.qty != null ? String(initial.qty) : "",
-        category:        initial.category        ?? "",
+        category:        initial.category         ?? "R",
         invoiceDate:     toDateInput(initial.invoiceDate),
         packingSlipDate: toDateInput(initial.packingSlipDate),
         unitPrice:       initial.unitPrice  != null ? String(initial.unitPrice)  : "",
         totalPrice:      initial.totalPrice != null ? String(initial.totalPrice) : "",
-        deviceNumber:    initial.deviceNumber ?? "",
+        deviceNumber:    dn,
+        check:           initial.check ?? "",
       }])
+      setDeviceSearches([dn])
+      setDeviceDropdowns([false])
+      setDropdownRects([null])
       if (isAdmin && initial.customerAccount) setCustomerAccount(initial.customerAccount)
     } else {
       setForms([{ ...EMPTY }])
+      setDeviceSearches([""])
+      setDeviceDropdowns([false])
+      setDropdownRects([null])
     }
   }, [initial, isAdmin])
 
@@ -143,32 +182,51 @@ export function TransactionFormModal({ initial, role, onClose, onSaved }: Transa
     }
   }
 
-  function setCategoryField(index: number, value: string) {
-    setForms((prev) =>
-      prev.map((form, i) => {
-        if (i !== index) return form
-        return {
-          ...form,
-          category: value,
-          deviceNumber: value === "S" ? "STOCK" : form.deviceNumber === "STOCK" ? "" : form.deviceNumber,
-        }
+  function openDeviceDropdown(index: number) {
+    const wrapper = deviceWrapperRefs.current[index]
+    if (wrapper) {
+      const rect = wrapper.getBoundingClientRect()
+      setDropdownRects((prev) => {
+        const next = [...prev]
+        next[index] = { top: rect.bottom + 4, left: rect.left, width: rect.width }
+        return next
       })
+    }
+    setDeviceDropdowns((prev) => prev.map((_, i) => i === index ? true : _))
+  }
+
+  function setDeviceNumber(index: number, deviceNumber: string, displayText: string) {
+    setForms((prev) =>
+      prev.map((f, i) => i === index ? { ...f, deviceNumber } : f)
     )
+    setDeviceSearches((prev) => prev.map((s, i) => i === index ? displayText : s))
+    setDeviceDropdowns((prev) => prev.map((_, i) => i === index ? false : _))
+  }
+
+  function handleDeviceSearchChange(index: number, value: string) {
+    setDeviceSearches((prev) => prev.map((s, i) => i === index ? value : s))
+    setForms((prev) => prev.map((f, i) => i === index ? { ...f, deviceNumber: "" } : f))
+    setDeviceDropdowns((prev) => prev.map((_, i) => i === index ? true : _))
   }
 
   function addItem() {
     setForms((prev) => [...prev, { ...EMPTY }])
+    setDeviceSearches((prev) => [...prev, ""])
+    setDeviceDropdowns((prev) => [...prev, false])
+    setDropdownRects((prev) => [...prev, null])
   }
 
   function removeItem(index: number) {
     setForms((prev) => prev.filter((_, i) => i !== index))
+    setDeviceSearches((prev) => prev.filter((_, i) => i !== index))
+    setDeviceDropdowns((prev) => prev.filter((_, i) => i !== index))
+    setDropdownRects((prev) => prev.filter((_, i) => i !== index))
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
 
-    // Validasi: item manapun tidak boleh sepenuhnya kosong
     const emptyIndexes = forms
       .map((f, i) => (isFormEmpty(f) ? i + 1 : null))
       .filter((v): v is number => v !== null)
@@ -193,12 +251,13 @@ export function TransactionFormModal({ initial, role, onClose, onSaved }: Transa
         axPartNumber:    form.axPartNumber || null,
         partName:        form.partName     || null,
         qty:             form.qty             ? Number(form.qty)        : null,
-        category:        form.category        || null,
+        category:        form.category        || "R",
         invoiceDate:     form.invoiceDate     || null,
         packingSlipDate: form.packingSlipDate || null,
         unitPrice:       form.unitPrice       ? Number(form.unitPrice)  : null,
-        totalPrice:      form.totalPrice  ? Number(form.totalPrice) : null,
-        deviceNumber:    form.deviceNumber || null,
+        totalPrice:      form.totalPrice      ? Number(form.totalPrice) : null,
+        deviceNumber:    form.deviceNumber    || null,
+        check:           form.check           || null,
         ...(isAdmin && { customerAccount }),
       }
     }
@@ -278,102 +337,151 @@ export function TransactionFormModal({ initial, role, onClose, onSaved }: Transa
               </div>
             )}
 
-            {forms.map((form, index) => (
-              <div key={index} className="border border-gray-200 rounded-xl overflow-hidden">
-                {/* Card header */}
-                {!isEdit && (
-                  <div className="flex items-center justify-between px-4 py-2.5 bg-slate-100 border-b border-slate-200">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                      Item #{index + 1}
-                    </span>
-                    {forms.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeItem(index)}
-                        className="text-red-400 hover:text-red-600 transition-colors p-1 rounded-lg hover:bg-red-50"
-                        title="Remove this item"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
-                  </div>
-                )}
+            {forms.map((form, index) => {
+              const filteredUnits = units.filter((u) => {
+                const q = deviceSearches[index]?.toLowerCase() ?? ""
+                return (
+                  !q ||
+                  u.deviceNumber.toLowerCase().includes(q) ||
+                  u.model?.toLowerCase().includes(q) ||
+                  u.fleetNumber?.toLowerCase().includes(q)
+                )
+              })
 
-                {/* Card body */}
-                <div className="p-4">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {FIELDS.map(({ key, label, type, placeholder }) => (
-                      <div key={key} className={key === "partName" ? "col-span-2 sm:col-span-3" : ""}>
-                        <label className="block text-xs font-semibold text-gray-500 mb-1.5">
-                          {label}
-                        </label>
-                        <input
-                          type={type}
-                          value={form[key]}
-                          onChange={setField(index, key)}
-                          placeholder={placeholder}
-                          min={type === "number" ? "0" : undefined}
-                          className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#367C2B] focus:border-transparent"
-                        />
-                      </div>
-                    ))}
-
-                    {/* Dropdown Category */}
-                    <div className="col-span-1">
-                      <label className="block text-xs font-semibold text-gray-500 mb-1.5">
-                        Category
-                      </label>
-                      <select
-                        value={form.category}
-                        onChange={(e) => setCategoryField(index, e.target.value)}
-                        className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#367C2B] focus:border-transparent bg-white"
-                      >
-                        {CATEGORY_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
+              return (
+                <div key={index} className="border border-gray-200 rounded-xl overflow-hidden">
+                  {/* Card header */}
+                  {!isEdit && (
+                    <div className="flex items-center justify-between px-4 py-2.5 bg-slate-100 border-b border-slate-200">
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                        Item #{index + 1}
+                      </span>
+                      {forms.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeItem(index)}
+                          className="text-red-400 hover:text-red-600 transition-colors p-1 rounded-lg hover:bg-red-50"
+                          title="Remove this item"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
+                  )}
 
-                    {/* Dropdown Unit */}
-                    <div className="col-span-1">
-                      <label className="block text-xs font-semibold text-gray-500 mb-1.5">
-                        Unit / Device No.
-                      </label>
-                      {form.category === "S" ? (
-                        <div className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-500">
-                          STOCK — Stock Gudang
+                  {/* Card body */}
+                  <div className="p-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {FIELDS.map(({ key, label, type, placeholder, info }) => (
+                        <div key={key} className={key === "partName" ? "col-span-2 sm:col-span-3" : ""}>
+                          <label className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1.5">
+                            {label}
+                            {info && (
+                              <span className="relative group/tip ml-0.5 inline-flex cursor-help">
+                                <Info size={11} className="text-gray-400" />
+                                <span className="absolute left-4 bottom-full mb-1 z-20 bg-gray-800 text-white text-[10px] leading-snug px-2 py-1.5 rounded shadow-lg w-36 whitespace-normal opacity-0 pointer-events-none group-hover/tip:opacity-100 transition-opacity">
+                                  {info}
+                                </span>
+                              </span>
+                            )}
+                          </label>
+                          <input
+                            type={type}
+                            value={form[key]}
+                            onChange={setField(index, key)}
+                            placeholder={placeholder}
+                            min={type === "number" ? "0" : undefined}
+                            className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#367C2B] focus:border-transparent"
+                          />
                         </div>
-                      ) : (
+                      ))}
+
+                      {/* Notes dropdown */}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1.5">
+                          Notes
+                        </label>
                         <select
-                          value={form.deviceNumber}
+                          value={form.check}
                           onChange={(e) =>
                             setForms((prev) =>
                               prev.map((f, i) =>
-                                i === index ? { ...f, deviceNumber: e.target.value } : f
+                                i === index ? { ...f, check: e.target.value } : f
                               )
                             )
                           }
                           className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#367C2B] focus:border-transparent bg-white"
                         >
-                          <option value="">— None / select unit —</option>
-                          {units
-                            .filter((u) => u.deviceNumber !== "STOCK")
-                            .map((u) => (
-                              <option key={u.id} value={u.deviceNumber}>
-                                {u.deviceNumber}
-                                {u.model ? ` — ${u.model}` : ""}
-                                {u.fleetNumber ? ` (${u.fleetNumber})` : ""}
-                              </option>
-                            ))}
+                          {CHECK_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
                         </select>
-                      )}
+                      </div>
+
+                      {/* Device combobox */}
+                      <div className="col-span-2 sm:col-span-2">
+                        <label className="block text-xs font-semibold text-gray-500 mb-1.5">
+                          Unit / Device No.
+                        </label>
+                        <div
+                          ref={(el) => { deviceWrapperRefs.current[index] = el }}
+                          className="relative"
+                        >
+                          <input
+                            type="text"
+                            value={deviceSearches[index] ?? ""}
+                            onChange={(e) => handleDeviceSearchChange(index, e.target.value)}
+                            onFocus={() => openDeviceDropdown(index)}
+                            onBlur={() =>
+                              setTimeout(() =>
+                                setDeviceDropdowns((prev) =>
+                                  prev.map((_, i) => i === index ? false : _)
+                                ), 150
+                              )
+                            }
+                            placeholder="Type to search device..."
+                            className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#367C2B] focus:border-transparent"
+                          />
+                          {deviceDropdowns[index] && filteredUnits.length > 0 && dropdownRects[index] && (
+                            <div
+                              style={{
+                                position: "fixed",
+                                top: dropdownRects[index]!.top,
+                                left: dropdownRects[index]!.left,
+                                width: dropdownRects[index]!.width,
+                              }}
+                              className="z-200 bg-white border border-gray-200 rounded-lg shadow-lg max-h-44 overflow-y-auto"
+                            >
+                              {filteredUnits.map((u) => (
+                                <button
+                                  key={u.id}
+                                  type="button"
+                                  onMouseDown={() => setDeviceNumber(index, u.deviceNumber, formatUnitLabel(u))}
+                                  className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-50 transition-colors ${
+                                    form.deviceNumber === u.deviceNumber ? "bg-green-50 text-[#367C2B] font-semibold" : "text-gray-900"
+                                  }`}
+                                >
+                                  <span className="font-mono">{u.deviceNumber}</span>
+                                  {u.model && <span className="text-gray-500"> — {u.model}</span>}
+                                  {u.fleetNumber && <span className="text-gray-400"> ({u.fleetNumber})</span>}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        {form.deviceNumber && (
+                          <p className="text-[10px] text-[#367C2B] mt-1 font-semibold">
+                            Selected: {form.deviceNumber}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
 
-            {/* Tambah item */}
+            {/* Add item */}
             {!isEdit && (
               <button
                 type="button"

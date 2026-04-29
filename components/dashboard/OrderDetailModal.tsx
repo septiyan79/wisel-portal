@@ -32,9 +32,9 @@ function fmtDate(iso: string | null | undefined) {
 
 export function OrderDetailModal({ transaction: t, onClose }: OrderDetailModalProps) {
   const rows = [
-    { label: "SO Number",     value: t.soNumber     ?? "—", mono: true  },
-    { label: "Part Number",   value: t.partNumber   ?? "—", mono: true  },
-    { label: "AX Part No.",   value: t.axPartNumber ?? "—", mono: true  },
+    { label: "SO Number",         value: t.soNumber     ?? "—", mono: true  },
+    { label: "Part Number",       value: t.partNumber   ?? "—", mono: true  },
+    { label: "Wisel Part No.",    value: t.axPartNumber ?? "—", mono: true  },
     { label: "Part Name",         value: t.partName     ?? "—", mono: false },
     { label: "Qty",               value: t.qty != null ? `${t.qty} pcs` : "—", mono: false },
     { label: "Category",          value: fmtCategory(t.category),    mono: false },
@@ -42,6 +42,7 @@ export function OrderDetailModal({ transaction: t, onClose }: OrderDetailModalPr
     { label: "Total Price",       value: fmt(t.totalPrice),          mono: false },
     { label: "Invoice Date",      value: fmtDate(t.invoiceDate),     mono: false },
     { label: "Packing Slip Date", value: fmtDate(t.packingSlipDate), mono: false },
+    { label: "Notes",             value: t.check ?? "—",             mono: false },
     { label: "Unit No.",          value: t.deviceNumber ?? "—", mono: true  },
     { label: "Customer Account",  value: t.customerAccount ?? "—", mono: true },
   ]

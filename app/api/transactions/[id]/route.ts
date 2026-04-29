@@ -21,7 +21,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const body = await req.json()
   const {
     soNumber, quotation, poNumber, partNumber, axPartNumber, partName,
-    qty, category, invoiceDate, packingSlipDate, unitPrice, totalPrice, deviceNumber,
+    qty, category, invoiceDate, packingSlipDate, unitPrice, totalPrice, deviceNumber, check,
   } = body
 
   const updated = await prisma.transaction.update({
@@ -40,6 +40,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       unitPrice:       unitPrice  != null ? Number(unitPrice)  : null,
       totalPrice:      totalPrice != null ? Number(totalPrice) : null,
       deviceNumber:    deviceNumber    || null,
+      check:           check           ?? null,
     },
   })
 

@@ -49,7 +49,7 @@ export async function POST(req: Request) {
   for (const item of items) {
     const {
       soNumber, quotation, poNumber, partNumber, axPartNumber, partName,
-      qty, category, invoiceDate, packingSlipDate, unitPrice, totalPrice, deviceNumber, customerAccount,
+      qty, category, invoiceDate, packingSlipDate, unitPrice, totalPrice, deviceNumber, customerAccount, check,
     } = item
 
     // Admin boleh pilih customer, customer hanya bisa atas nama diri sendiri
@@ -75,6 +75,7 @@ export async function POST(req: Request) {
         unitPrice:    unitPrice  != null ? Number(unitPrice)  : null,
         totalPrice:   totalPrice != null ? Number(totalPrice) : null,
         deviceNumber: deviceNumber || null,
+        check:        check        || null,
       },
     })
     results.push(transaction)

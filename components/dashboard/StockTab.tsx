@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronLeft, ChevronRight, Search } from "lucide-react"
+import { ChevronLeft, ChevronRight, Search, Eye } from "lucide-react"
 import { StockDetailModal, type StockRow } from "./StockDetailModal"
 
 interface StockTabProps {
@@ -81,17 +81,17 @@ export function StockTab({ transactions: initialTransactions }: StockTabProps) {
         <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
           <p className="text-xs text-gray-400 font-semibold uppercase">Total Stock</p>
           <p className="text-2xl font-black text-gray-900 mt-0.5">{transactions.length}</p>
-          <p className="text-xs text-gray-400">{totalQty} pcs</p>
+          <p className="text-xs text-gray-400">Part Number</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
           <p className="text-xs text-gray-400 font-semibold uppercase">Assigned</p>
           <p className="text-2xl font-black text-[#367C2B] mt-0.5">{totalAssigned}</p>
-          <p className="text-xs text-gray-400">pcs</p>
+          <p className="text-xs text-gray-400">Qty</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
           <p className="text-xs text-gray-400 font-semibold uppercase">Remaining</p>
           <p className="text-2xl font-black text-amber-600 mt-0.5">{totalRemaining}</p>
-          <p className="text-xs text-gray-400">pcs</p>
+          <p className="text-xs text-gray-400">Qty</p>
         </div>
       </div>
 
@@ -121,12 +121,13 @@ export function StockTab({ transactions: initialTransactions }: StockTabProps) {
                 <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 whitespace-nowrap">Remaining</th>
                 <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 whitespace-nowrap">Status</th>
                 <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 whitespace-nowrap">Total (Rp)</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-sm text-gray-400">
+                  <td colSpan={9} className="px-4 py-10 text-center text-sm text-gray-400">
                     {search ? "Tidak ada hasil" : "Belum ada transaksi stock"}
                   </td>
                 </tr>
@@ -134,11 +135,7 @@ export function StockTab({ transactions: initialTransactions }: StockTabProps) {
                 paginated.map((t) => {
                   const remaining = (t.qty ?? 0) - t.assignedQty
                   return (
-                    <tr
-                      key={t.id}
-                      onClick={() => setSelected(t)}
-                      className="hover:bg-slate-50 cursor-pointer"
-                    >
+                    <tr key={t.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3 font-semibold text-gray-900">{t.soNumber || "—"}</td>
                       <td className="px-4 py-3">
                         <p className="text-gray-900 font-medium">{t.partName || "—"}</p>
@@ -150,6 +147,15 @@ export function StockTab({ transactions: initialTransactions }: StockTabProps) {
                       <td className="px-4 py-3 text-right text-amber-600 font-semibold">{remaining}</td>
                       <td className="px-4 py-3">{statusBadge(remaining, t.qty)}</td>
                       <td className="px-4 py-3 text-right text-gray-600">{fmt(t.totalPrice)}</td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => setSelected(t)}
+                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Lihat detail"
+                        >
+                          <Eye size={14} />
+                        </button>
+                      </td>
                     </tr>
                   )
                 })

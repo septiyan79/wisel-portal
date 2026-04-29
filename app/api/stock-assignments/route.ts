@@ -39,7 +39,7 @@ export async function POST(req: Request) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { stockTransactionId, targetDeviceNumber, qty, note } = await req.json()
+  const { stockTransactionId, targetDeviceNumber, qty, check, packingSlipDate } = await req.json()
 
   if (!stockTransactionId || !targetDeviceNumber || qty == null) {
     return NextResponse.json({ error: "stockTransactionId, targetDeviceNumber, qty required" }, { status: 400 })
@@ -82,7 +82,8 @@ export async function POST(req: Request) {
       stockTransactionId,
       targetDeviceNumber,
       qty: Number(qty),
-      note: note || null,
+      check: check || null,
+      packingSlipDate: packingSlipDate ? new Date(packingSlipDate) : null,
     },
     include: { targetUnit: { select: { deviceNumber: true, fleetNumber: true, model: true } } },
   })
