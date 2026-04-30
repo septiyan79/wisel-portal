@@ -1,8 +1,13 @@
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
+import { OrdersTab } from "@/components/dashboard/OrdersTab"
 
 function fmt(value: number) {
-  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value)
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(value)
 }
 
 export default async function TransactionSummaryPage() {
@@ -21,26 +26,87 @@ export default async function TransactionSummaryPage() {
   const [raw, rawAssignments] = await Promise.all([
     prisma.transaction.findMany({
       where: txWhere,
-      select: { totalPrice: true, qty: true, category: true, invoiceDate: true, partNumber: true, partName: true, deviceNumber: true },
+      orderBy: { invoiceDate: "desc" },
+      select: {
+        id: true, soNumber: true, quotation: true, poNumber: true,
+        partNumber: true, axPartNumber: true, partName: true,
+        qty: true, category: true, invoiceDate: true, packingSlipDate: true,
+        unitPrice: true, totalPrice: true, check: true,
+        customerAccount: true, deviceNumber: true, source: true,
+      },
     }),
     prisma.stockAssignment.findMany({
       where: assignWhere,
-      select: {
-        targetDeviceNumber: true,
-        qty: true,
-        stockTransaction: { select: { partNumber: true, partName: true, unitPrice: true, invoiceDate: true } },
+      include: {
+        stockTransaction: {
+          select: {
+            soNumber: true, quotation: true, poNumber: true,
+            partNumber: true, axPartNumber: true, partName: true,
+            invoiceDate: true, packingSlipDate: true,
+            unitPrice: true, customerAccount: true,
+          },
+        },
       },
     }),
   ])
 
-  const totalValue =
-    raw.reduce((sum, t) => sum + (t.totalPrice ?? 0), 0) +
-    rawAssignments.reduce((sum, a) => sum + (a.stockTransaction.unitPrice != null ? a.qty * a.stockTransaction.unitPrice : 0), 0)
+  // ── Table rows ────────────────────────────────────────────────
+  const transactions = raw.map((t) => ({
+    ...t,
+    invoiceDate:     t.invoiceDate?.toISOString()     ?? null,
+    packingSlipDate: t.packingSlipDate?.toISOString() ?? null,
+    check:           t.check ?? null,
+  }))
 
-  const totalRepair = raw.filter((t) => t.category === "R").length + rawAssignments.length
-  const totalPM     = raw.filter((t) => t.category === "P").length
+  const assignmentRows = rawAssignments.map((a) => {
+    const p = a.stockTransaction
+    return {
+      id:              a.id,
+      soNumber:        p.soNumber,
+      quotation:       p.quotation,
+      poNumber:        p.poNumber,
+      partNumber:      p.partNumber,
+      axPartNumber:    p.axPartNumber,
+      partName:        p.partName,
+      qty:             a.qty,
+      category:        "R" as const,
+      invoiceDate:     p.invoiceDate?.toISOString()     ?? null,
+      packingSlipDate: a.packingSlipDate?.toISOString() ?? null,
+      unitPrice:       p.unitPrice,
+      totalPrice:      p.unitPrice != null ? a.qty * p.unitPrice : null,
+      check:           a.check ?? null,
+      customerAccount: p.customerAccount,
+      deviceNumber:    a.targetDeviceNumber,
+      source:          "stock_assignment",
+    }
+  })
 
-  // Monthly breakdown
+  const allTransactions = [...transactions, ...assignmentRows].sort((a, b) => {
+    if (!a.invoiceDate && !b.invoiceDate) return 0
+    if (!a.invoiceDate) return 1
+    if (!b.invoiceDate) return -1
+    return b.invoiceDate.localeCompare(a.invoiceDate)
+  })
+
+  // ── KPI ───────────────────────────────────────────────────────
+  let totalPM = 0, totalPMPrice = 0
+  let totalRepair = 0, totalRepairPrice = 0
+  let totalAllPrice = 0
+
+  for (const t of raw) {
+    if (t.category === "P") { totalPM++;     totalPMPrice     += t.totalPrice ?? 0 }
+    if (t.category === "R") { totalRepair++; totalRepairPrice += t.totalPrice ?? 0 }
+    totalAllPrice += t.totalPrice ?? 0
+  }
+  for (const a of rawAssignments) {
+    const price = a.stockTransaction.unitPrice != null ? a.qty * a.stockTransaction.unitPrice : 0
+    totalRepair++
+    totalRepairPrice += price
+    totalAllPrice    += price
+  }
+  const totalCount = raw.length + rawAssignments.length
+
+  // ── Value by Month ────────────────────────────────────────────
   const monthMap = new Map<string, { count: number; value: number }>()
   for (const t of raw) {
     if (!t.invoiceDate) continue
@@ -57,10 +123,10 @@ export default async function TransactionSummaryPage() {
     monthMap.set(key, { count: cur.count + 1, value: cur.value + price })
   }
   const months = [...monthMap.entries()]
-    .sort(([, a], [, b]) => b.value - a.value)
+    .sort(([a], [b]) => b.localeCompare(a))
     .slice(0, 6)
 
-  // Top 5 parts by total value
+  // ── Top 5 Part Number ─────────────────────────────────────────
   const partMap = new Map<string, { name: string; value: number; count: number }>()
   for (const t of raw) {
     const key = t.partNumber || "—"
@@ -77,7 +143,7 @@ export default async function TransactionSummaryPage() {
     .sort(([, a], [, b]) => b.value - a.value)
     .slice(0, 5)
 
-  // Top 5 fleets by total value (assignments pakai targetDeviceNumber, bukan "STOCK")
+  // ── Top 5 Fleet Number ────────────────────────────────────────
   const fleetMap = new Map<string, { value: number; count: number }>()
   for (const t of raw) {
     const key = t.deviceNumber || "—"
@@ -102,24 +168,37 @@ export default async function TransactionSummaryPage() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white border border-gray-200 rounded-lg px-5 py-4">
-          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Total Repair</p>
-          <p className="mt-1 text-2xl font-black text-gray-900">{totalRepair.toLocaleString("id-ID")}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+        <div className="bg-blue-50 rounded-xl p-4 border border-gray-100">
+          <span className="inline-block text-[11px] font-bold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full mb-2">
+            {totalPM.toLocaleString("id-ID")} tx
+          </span>
+          <p className="text-lg font-black text-blue-700 truncate">{fmt(totalPMPrice)}</p>
+          <p className="text-xs text-gray-500 mt-0.5">PM Transactions</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-lg px-5 py-4">
-          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Total PM</p>
-          <p className="mt-1 text-2xl font-black text-gray-900">{totalPM.toLocaleString("id-ID")}</p>
+
+        <div className="bg-orange-50 rounded-xl p-4 border border-gray-100">
+          <span className="inline-block text-[11px] font-bold bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full mb-2">
+            {totalRepair.toLocaleString("id-ID")} tx
+          </span>
+          <p className="text-lg font-black text-orange-600 truncate">{fmt(totalRepairPrice)}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Repair Transactions</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-lg px-5 py-4">
-          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Total Value</p>
-          <p className="mt-1 text-2xl font-black text-[#367C2B]">{fmt(totalValue)}</p>
+
+        <div className="bg-green-50 rounded-xl p-4 border border-gray-100">
+          <span className="inline-block text-[11px] font-bold bg-green-100 text-[#367C2B] px-2 py-0.5 rounded-full mb-2">
+            {totalCount.toLocaleString("id-ID")} tx
+          </span>
+          <p className="text-lg font-black text-[#367C2B] truncate">{fmt(totalAllPrice)}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Total Transactions</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Monthly breakdown */}
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      {/* 3 data cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+
+        {/* Value by Month */}
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100">
             <h2 className="text-sm font-black text-gray-900">Value by Month</h2>
           </div>
@@ -139,8 +218,8 @@ export default async function TransactionSummaryPage() {
           </div>
         </div>
 
-        {/* Top parts */}
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        {/* Top 5 Part Number */}
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100">
             <h2 className="text-sm font-black text-gray-900">Top 5 Part Number</h2>
           </div>
@@ -166,8 +245,8 @@ export default async function TransactionSummaryPage() {
           </div>
         </div>
 
-        {/* Top fleets */}
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        {/* Top 5 Fleet Number */}
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100">
             <h2 className="text-sm font-black text-gray-900">Top 5 Fleet Number</h2>
           </div>
@@ -190,6 +269,9 @@ export default async function TransactionSummaryPage() {
           </div>
         </div>
       </div>
+
+      {/* Table */}
+      <OrdersTab transactions={allTransactions} role={session!.user.role} />
     </>
   )
 }

@@ -147,40 +147,6 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
         />
       )}
 
-      {/* Stat ringkasan */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {[
-          {
-            label: "Total Transactions",
-            value: transactions.length,
-            color: "text-gray-900",
-            bg: "bg-gray-50",
-          },
-          {
-            label: "This Month",
-            value: transactions.filter((t) => {
-              if (!t.invoiceDate) return false
-              const d = new Date(t.invoiceDate)
-              const now = new Date()
-              return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-            }).length,
-            color: "text-green-700",
-            bg: "bg-green-50",
-          },
-          {
-            label: "Total Value",
-            value: fmt(transactions.reduce((s, t) => s + (t.totalPrice ?? 0), 0)),
-            color: "text-blue-700",
-            bg: "bg-blue-50",
-          },
-        ].map((s) => (
-          <div key={s.label} className={`${s.bg} rounded-xl p-4 border border-gray-100`}>
-            <p className={`text-2xl font-black ${s.color} truncate`}>{s.value}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
-          </div>
-        ))}
-      </div>
-
       {/* Toolbar: search + date range + tambah */}
       <div className="flex items-center gap-3 flex-wrap">
         <input
