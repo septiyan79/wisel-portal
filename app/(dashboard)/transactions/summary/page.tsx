@@ -18,12 +18,17 @@ export default async function TransactionSummaryPage() {
       ? { isDeleted: false, customerAccount: session!.user.customerAccount, NOT: { category: "S" } }
       : { isDeleted: false, NOT: { category: "S" } }
 
+  const stockWhere =
+    session!.user.role === "customer"
+      ? { isDeleted: false, customerAccount: session!.user.customerAccount, category: "S" }
+      : { isDeleted: false, category: "S" }
+
   const assignWhere =
     session!.user.role === "customer"
       ? { stockTransaction: { isDeleted: false, customerAccount: session!.user.customerAccount } }
       : { stockTransaction: { isDeleted: false } }
 
-  const [raw, rawAssignments] = await Promise.all([
+  const [raw, rawAssignments, stockAgg] = await Promise.all([
     prisma.transaction.findMany({
       where: txWhere,
       orderBy: { invoiceDate: "desc" },
@@ -47,6 +52,11 @@ export default async function TransactionSummaryPage() {
           },
         },
       },
+    }),
+    prisma.transaction.aggregate({
+      where: stockWhere,
+      _count: { id: true },
+      _sum: { totalPrice: true },
     }),
   ])
 
@@ -91,20 +101,23 @@ export default async function TransactionSummaryPage() {
   // ── KPI ───────────────────────────────────────────────────────
   let totalPM = 0, totalPMPrice = 0
   let totalRepair = 0, totalRepairPrice = 0
-  let totalAllPrice = 0
+  let rawPrice = 0
 
   for (const t of raw) {
     if (t.category === "P") { totalPM++;     totalPMPrice     += t.totalPrice ?? 0 }
     if (t.category === "R") { totalRepair++; totalRepairPrice += t.totalPrice ?? 0 }
-    totalAllPrice += t.totalPrice ?? 0
+    rawPrice += t.totalPrice ?? 0
   }
   for (const a of rawAssignments) {
     const price = a.stockTransaction.unitPrice != null ? a.qty * a.stockTransaction.unitPrice : 0
     totalRepair++
     totalRepairPrice += price
-    totalAllPrice    += price
   }
-  const totalCount = raw.length + rawAssignments.length
+  const stockCount = stockAgg._count.id
+  const stockPrice = stockAgg._sum.totalPrice ?? 0
+  // Green total = P + R + S transactions only (no assignments — those derive from S stock)
+  const totalCount    = raw.length + stockCount
+  const totalAllPrice = rawPrice   + stockPrice
 
   // ── Value by Month ────────────────────────────────────────────
   const monthMap = new Map<string, { count: number; value: number }>()

@@ -10,12 +10,17 @@ export default async function TransactionByPartPage() {
       ? { isDeleted: false, customerAccount: session!.user.customerAccount, NOT: { category: "S" } }
       : { isDeleted: false, NOT: { category: "S" } }
 
+  const stockWhere =
+    session!.user.role === "customer"
+      ? { isDeleted: false, customerAccount: session!.user.customerAccount, category: "S" }
+      : { isDeleted: false, category: "S" }
+
   const assignWhere =
     session!.user.role === "customer"
       ? { stockTransaction: { isDeleted: false, customerAccount: session!.user.customerAccount } }
       : { stockTransaction: { isDeleted: false } }
 
-  const [raw, rawAssignments] = await Promise.all([
+  const [raw, rawAssignments, stockAgg] = await Promise.all([
     prisma.transaction.findMany({
       where: txWhere,
       select: { partNumber: true, axPartNumber: true, partName: true, category: true, qty: true, totalPrice: true },
@@ -26,6 +31,11 @@ export default async function TransactionByPartPage() {
         qty: true,
         stockTransaction: { select: { partNumber: true, axPartNumber: true, partName: true, unitPrice: true } },
       },
+    }),
+    prisma.transaction.aggregate({
+      where: stockWhere,
+      _count: { id: true },
+      _sum: { totalPrice: true },
     }),
   ])
 
@@ -42,7 +52,7 @@ export default async function TransactionByPartPage() {
   const groups = new Map<string, Agg>()
   let globalPMCount = 0, globalPMPrice = 0
   let globalRepairCount = 0, globalRepairPrice = 0
-  let globalTotalPrice = 0
+  let globalRawPrice = 0  // P+R only, for green KPI
 
   for (const t of raw) {
     const key = t.partNumber || t.axPartNumber || "—"
@@ -64,10 +74,10 @@ export default async function TransactionByPartPage() {
 
     if (isPM)     { globalPMCount++;     globalPMPrice     += price }
     if (isRepair) { globalRepairCount++; globalRepairPrice += price }
-    globalTotalPrice += price
+    globalRawPrice += price
   }
 
-  // Assignment rows dihitung sebagai Repair
+  // Assignment rows dihitung sebagai Repair (tidak masuk green total)
   for (const a of rawAssignments) {
     const p = a.stockTransaction
     const key = p.partNumber || p.axPartNumber || "—"
@@ -83,7 +93,6 @@ export default async function TransactionByPartPage() {
     })
     globalRepairCount++
     globalRepairPrice += price
-    globalTotalPrice  += price
   }
 
   const parts = [...groups.entries()]
@@ -110,8 +119,8 @@ export default async function TransactionByPartPage() {
         pmPrice={globalPMPrice}
         repairCount={globalRepairCount}
         repairPrice={globalRepairPrice}
-        totalCount={raw.length + rawAssignments.length}
-        totalPrice={globalTotalPrice}
+        totalCount={raw.length + stockAgg._count.id}
+        totalPrice={globalRawPrice + (stockAgg._sum.totalPrice ?? 0)}
       />
     </>
   )
