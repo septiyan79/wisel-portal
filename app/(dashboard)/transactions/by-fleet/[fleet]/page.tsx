@@ -11,18 +11,24 @@ export default async function FleetDetailPage({ params }: { params: Promise<{ fl
   const session = await auth()
 
   const deviceNumberFilter = fleet === "—" ? null : fleet
+  const isCustomer = session!.user.role === "customer"
 
-  const where = {
+  const txWhere = {
     isDeleted: false,
     deviceNumber: deviceNumberFilter,
-    ...(session!.user.role === "customer"
-      ? { customerAccount: session!.user.customerAccount }
-      : {}),
+    ...(isCustomer ? { customerAccount: session!.user.customerAccount } : {}),
   }
 
-  const [raw, unit] = await Promise.all([
+  const assignWhere = {
+    targetDeviceNumber: fleet,
+    ...(isCustomer
+      ? { stockTransaction: { isDeleted: false, customerAccount: session!.user.customerAccount } }
+      : { stockTransaction: { isDeleted: false } }),
+  }
+
+  const [raw, rawAssignments, unit] = await Promise.all([
     prisma.transaction.findMany({
-      where,
+      where: txWhere,
       orderBy: { invoiceDate: "desc" },
       select: {
         partNumber: true,
@@ -35,13 +41,29 @@ export default async function FleetDetailPage({ params }: { params: Promise<{ fl
         invoiceDate: true,
       },
     }),
+    prisma.stockAssignment.findMany({
+      where: assignWhere,
+      select: {
+        qty: true,
+        packingSlipDate: true,
+        stockTransaction: {
+          select: {
+            partNumber: true,
+            axPartNumber: true,
+            partName: true,
+            unitPrice: true,
+            invoiceDate: true,
+          },
+        },
+      },
+    }),
     prisma.unit.findUnique({
       where: { deviceNumber: fleet },
       select: { serialNumber: true, model: true, fleetNumber: true },
     }),
   ])
 
-  if (raw.length === 0) notFound()
+  if (raw.length === 0 && rawAssignments.length === 0) notFound()
 
   type Agg = {
     partName: string | null
@@ -80,20 +102,51 @@ export default async function FleetDetailPage({ params }: { params: Promise<{ fl
       latestPackingSlipDate:
         t.packingSlipDate
           ? cur.latestPackingSlipDate == null || t.packingSlipDate > cur.latestPackingSlipDate
-            ? t.packingSlipDate
-            : cur.latestPackingSlipDate
+            ? t.packingSlipDate : cur.latestPackingSlipDate
           : cur.latestPackingSlipDate,
       latestDate:
         t.invoiceDate
           ? cur.latestDate == null || t.invoiceDate > cur.latestDate
-            ? t.invoiceDate
-            : cur.latestDate
+            ? t.invoiceDate : cur.latestDate
           : cur.latestDate,
     })
 
     if (isPM)     { globalPMCount++;     globalPMPrice     += price }
     if (isRepair) { globalRepairCount++; globalRepairPrice += price }
     globalTotalPrice += price
+  }
+
+  for (const a of rawAssignments) {
+    const key = a.stockTransaction.partNumber || a.stockTransaction.axPartNumber || "—"
+    const price = a.qty * (a.stockTransaction.unitPrice ?? 0)
+
+    const cur = partMap.get(key) ?? {
+      partName: a.stockTransaction.partName ?? null,
+      pmCount: 0, repairCount: 0, otherCount: 0,
+      qty: 0, totalPrice: 0, latestPackingSlipDate: null, latestDate: null,
+    }
+    partMap.set(key, {
+      partName: cur.partName ?? a.stockTransaction.partName ?? null,
+      pmCount:     cur.pmCount,
+      repairCount: cur.repairCount + 1,
+      otherCount:  cur.otherCount,
+      qty:         cur.qty + a.qty,
+      totalPrice:  cur.totalPrice + price,
+      latestPackingSlipDate:
+        a.packingSlipDate
+          ? cur.latestPackingSlipDate == null || a.packingSlipDate > cur.latestPackingSlipDate
+            ? a.packingSlipDate : cur.latestPackingSlipDate
+          : cur.latestPackingSlipDate,
+      latestDate:
+        a.stockTransaction.invoiceDate
+          ? cur.latestDate == null || a.stockTransaction.invoiceDate > cur.latestDate
+            ? a.stockTransaction.invoiceDate : cur.latestDate
+          : cur.latestDate,
+    })
+
+    globalRepairCount++
+    globalRepairPrice += price
+    globalTotalPrice  += price
   }
 
   const rows = [...partMap.entries()]
@@ -155,7 +208,7 @@ export default async function FleetDetailPage({ params }: { params: Promise<{ fl
         pmPrice={globalPMPrice}
         repairCount={globalRepairCount}
         repairPrice={globalRepairPrice}
-        totalCount={raw.length}
+        totalCount={raw.length + rawAssignments.length}
         totalPrice={globalTotalPrice}
       />
     </>
