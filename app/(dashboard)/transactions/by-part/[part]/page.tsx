@@ -50,6 +50,7 @@ export default async function PartDetailPage({ params }: { params: Promise<{ par
         qty: true,
         unitPrice: true,
         invoiceDate: true,
+        packingSlipDate: true,
         deviceNumber: true,
         stockAssignments: {
           select: {
@@ -137,7 +138,7 @@ export default async function PartDetailPage({ params }: { params: Promise<{ par
         category: "S",
         qty: remaining,
         totalPrice: price,
-        packingSlipDate: null,
+        packingSlipDate: s.packingSlipDate?.toISOString() ?? null,
         notes: null,
       })
     }

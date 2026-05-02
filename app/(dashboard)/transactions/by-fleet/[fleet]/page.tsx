@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ChevronLeft } from "lucide-react"
-import FleetDetailTable from "./FleetDetailTable"
+import FleetDetailTable, { DetailRow } from "./FleetDetailTable"
 
 export default async function FleetDetailPage({ params }: { params: Promise<{ fleet: string }> }) {
   const { fleet: encodedFleet } = await params
@@ -38,21 +38,23 @@ export default async function FleetDetailPage({ params }: { params: Promise<{ fl
         qty: true,
         totalPrice: true,
         packingSlipDate: true,
-        invoiceDate: true,
+        check: true,
       },
     }),
     prisma.stockAssignment.findMany({
       where: assignWhere,
+      orderBy: { packingSlipDate: "desc" },
       select: {
         qty: true,
         packingSlipDate: true,
+        check: true,
         stockTransaction: {
           select: {
             partNumber: true,
             axPartNumber: true,
             partName: true,
             unitPrice: true,
-            invoiceDate: true,
+            qty: true,
           },
         },
       },
@@ -65,109 +67,56 @@ export default async function FleetDetailPage({ params }: { params: Promise<{ fl
 
   if (raw.length === 0 && rawAssignments.length === 0) notFound()
 
-  type Agg = {
-    partName: string | null
-    pmCount: number
-    repairCount: number
-    otherCount: number
-    qty: number
-    totalPrice: number
-    latestPackingSlipDate: Date | null
-    latestDate: Date | null
-  }
-
-  const partMap = new Map<string, Agg>()
+  // Summary totals
   let globalPMCount = 0, globalPMPrice = 0
   let globalRepairCount = 0, globalRepairPrice = 0
   let globalTotalPrice = 0
 
   for (const t of raw) {
-    const key = t.partNumber || t.axPartNumber || "—"
     const price = t.totalPrice ?? 0
-    const isPM = t.category === "P"
-    const isRepair = t.category === "R"
-
-    const cur = partMap.get(key) ?? {
-      partName: t.partName ?? null,
-      pmCount: 0, repairCount: 0, otherCount: 0,
-      qty: 0, totalPrice: 0, latestPackingSlipDate: null, latestDate: null,
-    }
-    partMap.set(key, {
-      partName: cur.partName ?? t.partName ?? null,
-      pmCount:     cur.pmCount     + (isPM     ? 1 : 0),
-      repairCount: cur.repairCount + (isRepair  ? 1 : 0),
-      otherCount:  cur.otherCount  + (!isPM && !isRepair ? 1 : 0),
-      qty:         cur.qty         + (t.qty ?? 0),
-      totalPrice:  cur.totalPrice  + price,
-      latestPackingSlipDate:
-        t.packingSlipDate
-          ? cur.latestPackingSlipDate == null || t.packingSlipDate > cur.latestPackingSlipDate
-            ? t.packingSlipDate : cur.latestPackingSlipDate
-          : cur.latestPackingSlipDate,
-      latestDate:
-        t.invoiceDate
-          ? cur.latestDate == null || t.invoiceDate > cur.latestDate
-            ? t.invoiceDate : cur.latestDate
-          : cur.latestDate,
-    })
-
-    if (isPM)     { globalPMCount++;     globalPMPrice     += price }
-    if (isRepair) { globalRepairCount++; globalRepairPrice += price }
+    if (t.category === "P") { globalPMCount++;     globalPMPrice     += price }
+    if (t.category === "R") { globalRepairCount++; globalRepairPrice += price }
     globalTotalPrice += price
   }
-
   for (const a of rawAssignments) {
-    const key = a.stockTransaction.partNumber || a.stockTransaction.axPartNumber || "—"
     const price = a.qty * (a.stockTransaction.unitPrice ?? 0)
-
-    const cur = partMap.get(key) ?? {
-      partName: a.stockTransaction.partName ?? null,
-      pmCount: 0, repairCount: 0, otherCount: 0,
-      qty: 0, totalPrice: 0, latestPackingSlipDate: null, latestDate: null,
-    }
-    partMap.set(key, {
-      partName: cur.partName ?? a.stockTransaction.partName ?? null,
-      pmCount:     cur.pmCount,
-      repairCount: cur.repairCount + 1,
-      otherCount:  cur.otherCount,
-      qty:         cur.qty + a.qty,
-      totalPrice:  cur.totalPrice + price,
-      latestPackingSlipDate:
-        a.packingSlipDate
-          ? cur.latestPackingSlipDate == null || a.packingSlipDate > cur.latestPackingSlipDate
-            ? a.packingSlipDate : cur.latestPackingSlipDate
-          : cur.latestPackingSlipDate,
-      latestDate:
-        a.stockTransaction.invoiceDate
-          ? cur.latestDate == null || a.stockTransaction.invoiceDate > cur.latestDate
-            ? a.stockTransaction.invoiceDate : cur.latestDate
-          : cur.latestDate,
-    })
-
     globalRepairCount++
     globalRepairPrice += price
     globalTotalPrice  += price
   }
 
-  const rows = [...partMap.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([partNumber, agg]) => ({
-      partNumber,
-      partName: agg.partName,
-      category:
-        agg.pmCount > 0 && agg.repairCount > 0 ? "M"
-        : agg.pmCount > 0 ? "P"
-        : agg.repairCount > 0 ? "R"
-        : "O",
-      qty: agg.qty,
-      totalPrice: agg.totalPrice,
-      latestPackingSlipDate: agg.latestPackingSlipDate?.toISOString() ?? null,
-      latestDate: agg.latestDate?.toISOString() ?? null,
-    }))
+  // Build individual rows
+  const rows: DetailRow[] = []
+
+  for (const t of raw) {
+    rows.push({
+      rowType: "tx",
+      partNumber: t.partNumber || t.axPartNumber || "—",
+      partName:   t.partName ?? null,
+      category:   t.category ?? "O",
+      qty:        t.qty ?? 0,
+      totalPrice: t.totalPrice ?? 0,
+      packingSlipDate: t.packingSlipDate?.toISOString() ?? null,
+      notes:      t.check ?? null,
+    })
+  }
+
+  for (const a of rawAssignments) {
+    const price = a.qty * (a.stockTransaction.unitPrice ?? 0)
+    rows.push({
+      rowType: "assign",
+      partNumber: a.stockTransaction.partNumber || a.stockTransaction.axPartNumber || "—",
+      partName:   a.stockTransaction.partName ?? null,
+      category:   "R",
+      qty:        a.qty,
+      totalPrice: price,
+      packingSlipDate: a.packingSlipDate?.toISOString() ?? null,
+      notes:      a.check ?? null,
+    })
+  }
 
   return (
     <>
-      {/* Back link */}
       <div className="mb-4">
         <Link
           href="/transactions/by-fleet"
@@ -178,25 +127,21 @@ export default async function FleetDetailPage({ params }: { params: Promise<{ fl
         </Link>
       </div>
 
-      {/* Fleet identity header */}
       <div className="mb-6">
         <h1 className="text-xl font-black text-gray-900">{unit?.fleetNumber ?? fleet}</h1>
         <div className="mt-1 h-0.5 w-10 bg-[#FFDE00]" />
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-2 text-sm text-gray-500">
           <span>
-            Device:{" "}
-            <span className="font-mono font-semibold text-gray-700">{fleet}</span>
+            Device: <span className="font-mono font-semibold text-gray-700">{fleet}</span>
           </span>
           {unit?.serialNumber && (
             <span>
-              Serial:{" "}
-              <span className="font-mono font-semibold text-gray-700">{unit.serialNumber}</span>
+              Serial: <span className="font-mono font-semibold text-gray-700">{unit.serialNumber}</span>
             </span>
           )}
           {unit?.model && (
             <span>
-              Model:{" "}
-              <span className="font-semibold text-gray-700">{unit.model}</span>
+              Model: <span className="font-semibold text-gray-700">{unit.model}</span>
             </span>
           )}
         </div>
