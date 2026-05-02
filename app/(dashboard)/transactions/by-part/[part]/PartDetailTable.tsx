@@ -20,14 +20,14 @@ function fmtDate(iso: string | null) {
   })
 }
 
-type CategoryCode = "P" | "R" | "M" | "O"
+type CategoryCode = "P" | "R" | "S" | "O"
 
 function CategoryBadge({ code }: { code: CategoryCode }) {
   const map: Record<CategoryCode, { label: string; cls: string }> = {
-    P: { label: "PM",          cls: "bg-blue-100 text-blue-700" },
-    R: { label: "Repair",      cls: "bg-orange-100 text-orange-600" },
-    M: { label: "PM + Repair", cls: "bg-purple-100 text-purple-700" },
-    O: { label: "Other",       cls: "bg-gray-100 text-gray-600" },
+    P: { label: "PM",     cls: "bg-blue-100 text-blue-700" },
+    R: { label: "Repair", cls: "bg-orange-100 text-orange-600" },
+    S: { label: "Stock",  cls: "bg-yellow-100 text-yellow-700" },
+    O: { label: "Other",  cls: "bg-gray-100 text-gray-600" },
   }
   const { label, cls } = map[code]
   return (
@@ -37,17 +37,18 @@ function CategoryBadge({ code }: { code: CategoryCode }) {
   )
 }
 
-export type FleetRow = {
+export type TxRow = {
+  id: string
   fleetLabel: string
   category: CategoryCode
   qty: number
   totalPrice: number
-  latestPackingSlipDate: string | null
-  latestDate: string | null
+  packingSlipDate: string | null
+  notes: string | null
 }
 
 interface Props {
-  rows: FleetRow[]
+  rows: TxRow[]
   pmCount: number
   pmPrice: number
   repairCount: number
@@ -141,12 +142,12 @@ export default function PartDetailTable({
                   <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Qty</th>
                   <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Price</th>
                   <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Packing Slip Date</th>
-                  <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Invoice Date</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Notes</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {paginated.map((row) => (
-                  <tr key={row.fleetLabel} className="hover:bg-gray-50/50 transition-colors">
+                  <tr key={row.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-5 py-4 font-mono font-bold text-gray-900 whitespace-nowrap">
                       {row.fleetLabel}
                     </td>
@@ -160,10 +161,10 @@ export default function PartDetailTable({
                       {fmt(row.totalPrice)}
                     </td>
                     <td className="px-5 py-4 text-right text-xs text-gray-400 whitespace-nowrap">
-                      {fmtDate(row.latestPackingSlipDate)}
+                      {fmtDate(row.packingSlipDate)}
                     </td>
-                    <td className="px-5 py-4 text-right text-xs text-gray-400 whitespace-nowrap">
-                      {fmtDate(row.latestDate)}
+                    <td className="px-5 py-4 text-left text-xs text-gray-500 max-w-45">
+                      {row.notes ?? <span className="text-gray-300">—</span>}
                     </td>
                   </tr>
                 ))}

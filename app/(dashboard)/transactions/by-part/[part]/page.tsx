@@ -3,129 +3,162 @@ import { prisma } from "@/lib/db"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ChevronLeft } from "lucide-react"
-import PartDetailTable, { FleetRow } from "./PartDetailTable"
+import PartDetailTable, { TxRow } from "./PartDetailTable"
 
 export default async function PartDetailPage({ params }: { params: Promise<{ part: string }> }) {
   const { part: encodedPart } = await params
   const partNumber = decodeURIComponent(encodedPart)
   const session = await auth()
+  const isCustomer = session!.user.role === "customer"
+  const customerFilter = isCustomer ? { customerAccount: session!.user.customerAccount } : {}
 
-  const where = {
-    isDeleted: false,
-    OR: [
-      { partNumber: partNumber === "—" ? null : partNumber },
-      { axPartNumber: partNumber === "—" ? null : partNumber },
-    ],
-    ...(session!.user.role === "customer"
-      ? { customerAccount: session!.user.customerAccount }
-      : {}),
-  }
+  const partFilter =
+    partNumber === "—"
+      ? [{ partNumber: null as null }, { axPartNumber: null as null }]
+      : [{ partNumber }, { axPartNumber: partNumber }]
 
-  const [raw, units] = await Promise.all([
+  const [rawTx, rawStock, units] = await Promise.all([
+    // Regular transactions (P, R, O — not stock)
     prisma.transaction.findMany({
-      where,
+      where: {
+        isDeleted: false,
+        category: { not: "S" },
+        OR: partFilter,
+        ...customerFilter,
+      },
       orderBy: { invoiceDate: "desc" },
       select: {
+        id: true,
         category: true,
         qty: true,
         totalPrice: true,
         packingSlipDate: true,
+        check: true,
+        deviceNumber: true,
+      },
+    }),
+    // Stock transactions with their individual assignments
+    prisma.transaction.findMany({
+      where: {
+        isDeleted: false,
+        category: "S",
+        OR: partFilter,
+        ...customerFilter,
+      },
+      select: {
+        id: true,
+        qty: true,
+        unitPrice: true,
         invoiceDate: true,
         deviceNumber: true,
+        stockAssignments: {
+          select: {
+            id: true,
+            qty: true,
+            packingSlipDate: true,
+            check: true,
+            targetDeviceNumber: true,
+          },
+        },
       },
     }),
     prisma.unit.findMany({
-      select: {
-        deviceNumber: true,
-        fleetNumber: true,
-      },
+      select: { deviceNumber: true, fleetNumber: true },
     }),
   ])
 
-  if (raw.length === 0) notFound()
+  if (rawTx.length === 0 && rawStock.length === 0) notFound()
 
   const unitMap = new Map(units.map((u) => [u.deviceNumber, u.fleetNumber ?? null]))
 
-  type Agg = {
-    pmCount: number
-    repairCount: number
-    pmQty: number
-    repairQty: number
-    qty: number
-    totalPrice: number
-    pmPrice: number
-    repairPrice: number
-    latestPackingSlipDate: Date | null
-    latestDate: Date | null
+  function resolveFleet(deviceNumber: string | null) {
+    if (!deviceNumber) return "—"
+    return unitMap.get(deviceNumber) ?? deviceNumber
   }
 
-  const fleetMap = new Map<string, Agg>()
   let globalPMCount = 0, globalPMPrice = 0
   let globalRepairCount = 0, globalRepairPrice = 0
   let globalTotalPrice = 0
 
-  for (const t of raw) {
-    const deviceKey = t.deviceNumber || "—"
-    const fleetNumber = unitMap.get(t.deviceNumber ?? "") ?? null
-    const key = fleetNumber ?? deviceKey
+  const rows: TxRow[] = []
 
+  // Regular transaction rows
+  for (const t of rawTx) {
     const price = t.totalPrice ?? 0
-    const qty = t.qty ?? 0
     const isPM = t.category === "P"
     const isRepair = t.category === "R"
-
-    const cur = fleetMap.get(key) ?? {
-      pmCount: 0, repairCount: 0,
-      pmQty: 0, repairQty: 0,
-      qty: 0, totalPrice: 0, pmPrice: 0, repairPrice: 0,
-      latestPackingSlipDate: null, latestDate: null,
-    }
-    fleetMap.set(key, {
-      pmCount:     cur.pmCount     + (isPM     ? 1 : 0),
-      repairCount: cur.repairCount + (isRepair ? 1 : 0),
-      pmQty:       cur.pmQty       + (isPM     ? qty   : 0),
-      repairQty:   cur.repairQty   + (isRepair ? qty   : 0),
-      qty:         cur.qty         + qty,
-      totalPrice:  cur.totalPrice  + price,
-      pmPrice:     cur.pmPrice     + (isPM     ? price : 0),
-      repairPrice: cur.repairPrice + (isRepair ? price : 0),
-      latestPackingSlipDate:
-        t.packingSlipDate
-          ? cur.latestPackingSlipDate == null || t.packingSlipDate > cur.latestPackingSlipDate
-            ? t.packingSlipDate
-            : cur.latestPackingSlipDate
-          : cur.latestPackingSlipDate,
-      latestDate:
-        t.invoiceDate
-          ? cur.latestDate == null || t.invoiceDate > cur.latestDate
-            ? t.invoiceDate
-            : cur.latestDate
-          : cur.latestDate,
-    })
 
     if (isPM)     { globalPMCount++;     globalPMPrice     += price }
     if (isRepair) { globalRepairCount++; globalRepairPrice += price }
     globalTotalPrice += price
+
+    rows.push({
+      id: t.id,
+      fleetLabel: resolveFleet(t.deviceNumber),
+      category: isPM ? "P" : isRepair ? "R" : "O",
+      qty: t.qty ?? 0,
+      totalPrice: price,
+      packingSlipDate: t.packingSlipDate?.toISOString() ?? null,
+      notes: t.check ?? null,
+    })
   }
 
-  const rows: FleetRow[] = [...fleetMap.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([fleetLabel, agg]) => ({
-      fleetLabel,
-      category:
-        agg.pmCount > 0 && agg.repairCount > 0 ? "M"
-        : agg.pmCount > 0 ? "P"
-        : agg.repairCount > 0 ? "R"
-        : "O",
-      qty: agg.qty,
-      totalPrice: agg.totalPrice,
-      latestPackingSlipDate: agg.latestPackingSlipDate?.toISOString() ?? null,
-      latestDate: agg.latestDate?.toISOString() ?? null,
-    }))
+  // Stock assignment rows → category R; remaining qty → category S
+  for (const s of rawStock) {
+    const totalAssigned = s.stockAssignments.reduce((sum, a) => sum + a.qty, 0)
+    const remaining = (s.qty ?? 0) - totalAssigned
+    const unitPrice = s.unitPrice ?? 0
+    const invoiceDate = s.invoiceDate?.toISOString() ?? null
+
+    for (const a of s.stockAssignments) {
+      const price = a.qty * unitPrice
+      globalRepairCount++
+      globalRepairPrice += price
+      globalTotalPrice  += price
+
+      rows.push({
+        id: a.id,
+        fleetLabel: resolveFleet(a.targetDeviceNumber),
+        category: "R",
+        qty: a.qty,
+        totalPrice: price,
+        packingSlipDate: a.packingSlipDate?.toISOString() ?? null,
+        notes: a.check ?? null,
+      })
+    }
+
+    if (remaining > 0) {
+      const price = remaining * unitPrice
+      globalTotalPrice += price
+
+      rows.push({
+        id: `${s.id}-rem`,
+        fleetLabel: resolveFleet(s.deviceNumber),
+        category: "S",
+        qty: remaining,
+        totalPrice: price,
+        packingSlipDate: null,
+        notes: null,
+      })
+    }
+  }
+
+  // Sort all rows newest first
+  rows.sort((a, b) => {
+    if (!a.packingSlipDate && !b.packingSlipDate) return 0
+    if (!a.packingSlipDate) return 1
+    if (!b.packingSlipDate) return -1
+    return b.packingSlipDate.localeCompare(a.packingSlipDate)
+  })
+
+  const totalAssignmentRows = rawStock.reduce((n, s) => n + s.stockAssignments.length, 0)
+  const totalRemainingRows = rawStock.filter((s) => {
+    const assigned = s.stockAssignments.reduce((sum, a) => sum + a.qty, 0)
+    return (s.qty ?? 0) - assigned > 0
+  }).length
 
   return (
     <>
-      {/* Back link */}
       <div className="mb-4">
         <Link
           href="/transactions/by-part"
@@ -136,7 +169,6 @@ export default async function PartDetailPage({ params }: { params: Promise<{ par
         </Link>
       </div>
 
-      {/* Part identity header */}
       <div className="mb-6">
         <h1 className="text-xl font-black font-mono text-gray-900">{partNumber}</h1>
         <div className="mt-1 h-0.5 w-10 bg-[#FFDE00]" />
@@ -148,7 +180,7 @@ export default async function PartDetailPage({ params }: { params: Promise<{ par
         pmPrice={globalPMPrice}
         repairCount={globalRepairCount}
         repairPrice={globalRepairPrice}
-        totalCount={raw.length}
+        totalCount={rawTx.length + totalAssignmentRows + totalRemainingRows}
         totalPrice={globalTotalPrice}
       />
     </>
