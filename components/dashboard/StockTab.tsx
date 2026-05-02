@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronLeft, ChevronRight, Search, Eye } from "lucide-react"
+import { ChevronLeft, ChevronRight, Search, Send } from "lucide-react"
 import { StockDetailModal, type StockRow } from "./StockDetailModal"
 
 interface StockTabProps {
@@ -153,7 +153,7 @@ export function StockTab({ transactions: initialTransactions }: StockTabProps) {
                           className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="Lihat detail"
                         >
-                          <Eye size={14} />
+                          <Send size={14} />
                         </button>
                       </td>
                     </tr>

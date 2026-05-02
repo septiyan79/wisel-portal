@@ -120,24 +120,26 @@ export default async function TransactionSummaryPage() {
   const totalAllPrice = rawPrice   + stockPrice
 
   // ── Value by Month ────────────────────────────────────────────
-  const monthMap = new Map<string, { count: number; value: number }>()
+  const monthMap = new Map<string, { label: string; count: number; value: number }>()
   for (const t of raw) {
     if (!t.invoiceDate) continue
-    const key = t.invoiceDate.toLocaleDateString("id-ID", { month: "long", year: "numeric" })
-    const cur = monthMap.get(key) ?? { count: 0, value: 0 }
-    monthMap.set(key, { count: cur.count + 1, value: cur.value + (t.totalPrice ?? 0) })
+    const key = `${t.invoiceDate.getFullYear()}-${String(t.invoiceDate.getMonth() + 1).padStart(2, "0")}`
+    const label = t.invoiceDate.toLocaleDateString("id-ID", { month: "long", year: "numeric" })
+    const cur = monthMap.get(key) ?? { label, count: 0, value: 0 }
+    monthMap.set(key, { ...cur, count: cur.count + 1, value: cur.value + (t.totalPrice ?? 0) })
   }
   for (const a of rawAssignments) {
     const date = a.stockTransaction.invoiceDate
     if (!date) continue
-    const key = date.toLocaleDateString("id-ID", { month: "long", year: "numeric" })
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+    const label = date.toLocaleDateString("id-ID", { month: "long", year: "numeric" })
     const price = a.stockTransaction.unitPrice != null ? a.qty * a.stockTransaction.unitPrice : 0
-    const cur = monthMap.get(key) ?? { count: 0, value: 0 }
-    monthMap.set(key, { count: cur.count + 1, value: cur.value + price })
+    const cur = monthMap.get(key) ?? { label, count: 0, value: 0 }
+    monthMap.set(key, { ...cur, count: cur.count + 1, value: cur.value + price })
   }
   const months = [...monthMap.entries()]
     .sort(([a], [b]) => b.localeCompare(a))
-    .slice(0, 6)
+    .slice(0, 5)
 
   // ── Top 5 Part Number ─────────────────────────────────────────
   const partMap = new Map<string, { name: string; value: number; count: number }>()
@@ -219,10 +221,10 @@ export default async function TransactionSummaryPage() {
             {months.length === 0 && (
               <p className="px-4 py-6 text-xs text-gray-400 text-center">No data.</p>
             )}
-            {months.map(([month, data]) => (
-              <div key={month} className="px-4 py-3 flex items-center justify-between">
+            {months.map(([key, data]) => (
+              <div key={key} className="px-4 py-3 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-gray-800">{month}</p>
+                  <p className="text-sm font-semibold text-gray-800">{data.label}</p>
                   <p className="text-xs text-gray-500">{data.count} transactions</p>
                 </div>
                 <p className="text-sm font-bold text-[#367C2B]">{fmt(data.value)}</p>
