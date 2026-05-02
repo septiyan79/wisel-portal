@@ -115,7 +115,7 @@ export function StockTab({ transactions: initialTransactions }: StockTabProps) {
               <tr>
                 <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 whitespace-nowrap">SO Number</th>
                 <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 whitespace-nowrap">Part</th>
-                <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 whitespace-nowrap">Invoice Date</th>
+                <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 whitespace-nowrap">Packing Slip Date</th>
                 <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 whitespace-nowrap">Qty</th>
                 <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 whitespace-nowrap">Assigned</th>
                 <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 whitespace-nowrap">Remaining</th>
@@ -141,7 +141,7 @@ export function StockTab({ transactions: initialTransactions }: StockTabProps) {
                         <p className="text-gray-900 font-medium">{t.partName || "—"}</p>
                         <p className="text-xs text-gray-400">{t.partNumber || t.axPartNumber || ""}</p>
                       </td>
-                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{fmtDate(t.invoiceDate)}</td>
+                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{fmtDate(t.packingSlipDate)}</td>
                       <td className="px-4 py-3 text-right font-semibold text-gray-900">{fmt(t.qty)}</td>
                       <td className="px-4 py-3 text-right text-[#367C2B] font-semibold">{t.assignedQty}</td>
                       <td className="px-4 py-3 text-right text-amber-600 font-semibold">{remaining}</td>

@@ -26,6 +26,7 @@ export type TransactionRow = {
   unitPrice: number | null
   totalPrice: number | null
   check: string | null
+  fleetNumber: string | null
   customerAccount: string | null
   deviceNumber: string | null
   source: string
@@ -274,10 +275,11 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
                 <tr className="border-b border-gray-100 bg-gray-50/60">
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">SO Number</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Part</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden sm:table-cell">Category</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Qty</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden md:table-cell">Total</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden lg:table-cell">Invoice Date</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden lg:table-cell">No. Unit</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden lg:table-cell">Packing Slip Date</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden lg:table-cell">Fleet Number</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Actions</th>
                 </tr>
               </thead>
@@ -303,6 +305,12 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
                         <p className="text-xs font-mono text-gray-400 mt-0.5">{t.partNumber}</p>
                       )}
                     </td>
+                    <td className="px-5 py-4 hidden sm:table-cell">
+                      {t.category === "P" && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">PM</span>}
+                      {t.category === "R" && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-600">Repair</span>}
+                      {t.category === "S" && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Stock</span>}
+                      {!t.category && <span className="text-xs text-gray-300">—</span>}
+                    </td>
                     <td className="px-5 py-4 text-sm text-gray-600">
                       {t.qty != null ? `${t.qty} pcs` : "—"}
                     </td>
@@ -310,10 +318,10 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
                       {fmt(t.totalPrice)}
                     </td>
                     <td className="px-5 py-4 text-xs text-gray-400 hidden lg:table-cell whitespace-nowrap">
-                      {fmtDate(t.invoiceDate)}
+                      {fmtDate(t.packingSlipDate)}
                     </td>
                     <td className="px-5 py-4 text-xs font-mono text-gray-500 hidden lg:table-cell">
-                      {t.deviceNumber ?? "—"}
+                      {t.fleetNumber ?? t.deviceNumber ?? "—"}
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-1">

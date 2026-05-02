@@ -38,6 +38,7 @@ export default async function TransactionSummaryPage() {
         qty: true, category: true, invoiceDate: true, packingSlipDate: true,
         unitPrice: true, totalPrice: true, check: true,
         customerAccount: true, deviceNumber: true, source: true,
+        unit: { select: { fleetNumber: true } },
       },
     }),
     prisma.stockAssignment.findMany({
@@ -51,6 +52,7 @@ export default async function TransactionSummaryPage() {
             unitPrice: true, customerAccount: true,
           },
         },
+        targetUnit: { select: { fleetNumber: true } },
       },
     }),
     prisma.transaction.aggregate({
@@ -61,11 +63,12 @@ export default async function TransactionSummaryPage() {
   ])
 
   // ── Table rows ────────────────────────────────────────────────
-  const transactions = raw.map((t) => ({
+  const transactions = raw.map(({ unit, ...t }) => ({
     ...t,
     invoiceDate:     t.invoiceDate?.toISOString()     ?? null,
     packingSlipDate: t.packingSlipDate?.toISOString() ?? null,
     check:           t.check ?? null,
+    fleetNumber:     unit?.fleetNumber ?? null,
   }))
 
   const assignmentRows = rawAssignments.map((a) => {
@@ -85,6 +88,7 @@ export default async function TransactionSummaryPage() {
       unitPrice:       p.unitPrice,
       totalPrice:      p.unitPrice != null ? a.qty * p.unitPrice : null,
       check:           a.check ?? null,
+      fleetNumber:     a.targetUnit.fleetNumber ?? null,
       customerAccount: p.customerAccount,
       deviceNumber:    a.targetDeviceNumber,
       source:          "stock_assignment",
