@@ -11,6 +11,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const unit = await prisma.unit.findUnique({ where: { id } })
   if (!unit) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
+  if (unit.deviceNumber === "WSL-000039232") {
+    return NextResponse.json({ error: "Unit ini tidak dapat diubah karena digunakan sebagai unit stock sistem" }, { status: 403 })
+  }
+
   const { deviceNumber, serialNumber, fleetNumber, model, customerAccount } = await req.json()
 
   if (!deviceNumber?.trim()) {
