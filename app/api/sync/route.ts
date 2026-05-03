@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { exportToSheets } from "@/lib/gsheets"
 
 const BATCH_SIZE = 1000
 
@@ -116,6 +117,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    void exportToSheets()
     return NextResponse.json({
       success: true,
       upserted: upsertedCount,

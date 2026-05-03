@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
+import { exportToSheets } from "@/lib/gsheets"
 
 export async function GET(req: Request) {
   const session = await auth()
@@ -88,5 +89,6 @@ export async function POST(req: Request) {
     include: { targetUnit: { select: { deviceNumber: true, fleetNumber: true, model: true } } },
   })
 
+  void exportToSheets()
   return NextResponse.json(assignment, { status: 201 })
 }

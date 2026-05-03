@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
+import { exportToSheets } from "@/lib/gsheets"
 
 async function getManualTransaction(id: string, customerAccount: string, role: string) {
   const tx = await prisma.transaction.findUnique({ where: { id } })
@@ -44,6 +45,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     },
   })
 
+  void exportToSheets()
   return NextResponse.json(updated)
 }
 
@@ -60,5 +62,6 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     data: { isDeleted: true, deletedAt: new Date() },
   })
 
+  void exportToSheets()
   return NextResponse.json({ success: true })
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
+import { exportToSheets } from "@/lib/gsheets"
 
 export async function GET() {
   const session = await auth()
@@ -81,5 +82,6 @@ export async function POST(req: Request) {
     results.push(transaction)
   }
 
+  void exportToSheets()
   return NextResponse.json(results.length === 1 ? results[0] : results, { status: 201 })
 }

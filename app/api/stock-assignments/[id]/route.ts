@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
+import { exportToSheets } from "@/lib/gsheets"
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -59,6 +60,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     include: { targetUnit: { select: { deviceNumber: true, fleetNumber: true, model: true } } },
   })
 
+  void exportToSheets()
   return NextResponse.json(updated)
 }
 
@@ -84,5 +86,6 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
 
   await prisma.stockAssignment.delete({ where: { id } })
 
+  void exportToSheets()
   return NextResponse.json({ success: true })
 }
