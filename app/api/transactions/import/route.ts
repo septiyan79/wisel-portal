@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import * as XLSX from "xlsx"
+import { exportToSheets } from "@/lib/gsheets"
 
 // Kolom yang diharapkan (case-insensitive, trimmed)
 const COL_MAP: Record<string, string> = {
@@ -27,17 +28,27 @@ function normalizeHeader(h: unknown): string {
 
 function parseDate(val: unknown): string | null {
   if (!val) return null
-  // Jika xlsx sudah parse jadi Date object
-  if (val instanceof Date) return val.toISOString().slice(0, 10)
-  // Jika string ISO / YYYY-MM-DD
-  if (typeof val === "string") {
-    const d = new Date(val)
-    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10)
-  }
-  // Jika number (Excel serial date)
+  // Number = Excel serial date — parse_date_code adalah aritmatika murni, bebas timezone
   if (typeof val === "number") {
     const d = XLSX.SSF.parse_date_code(val)
     if (d) return `${d.y}-${String(d.m).padStart(2, "0")}-${String(d.d).padStart(2, "0")}`
+  }
+  // String — coba ISO "YYYY-MM-DD" langsung, lalu fallback ke generic
+  if (typeof val === "string" && val.trim()) {
+    const iso = val.trim()
+    if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso
+    // Fallback: ambil bagian tanggal saja tanpa timezone conversion
+    const parts = iso.match(/(\d{1,4})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/)
+    if (parts) {
+      const [, a, b, c] = parts
+      // Deteksi format: jika a > 31 → YYYY-MM-DD, jika c > 31 → DD/MM/YYYY atau MM/DD/YYYY
+      if (Number(a) > 31) {
+        return `${a}-${b.padStart(2, "0")}-${c.padStart(2, "0")}`
+      } else if (Number(c) > 31) {
+        // DD/MM/YYYY atau MM/DD/YYYY — asumsikan MM/DD/YYYY (format Excel default)
+        return `${c}-${a.padStart(2, "0")}-${b.padStart(2, "0")}`
+      }
+    }
   }
   return null
 }
@@ -53,7 +64,7 @@ export async function POST(req: Request) {
   if (!file) return NextResponse.json({ error: "File tidak ditemukan" }, { status: 400 })
 
   const buffer = Buffer.from(await file.arrayBuffer())
-  const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true })
+  const workbook = XLSX.read(buffer, { type: "buffer" })
   const sheet = workbook.Sheets[workbook.SheetNames[0]]
   const rows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(sheet, { defval: "" })
 
@@ -124,5 +135,6 @@ export async function POST(req: Request) {
     }
   }
 
+  if (success > 0) void exportToSheets()
   return NextResponse.json({ success, errors, total: rows.length })
 }
