@@ -49,6 +49,10 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   })
   if (!unit) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
+  if (unit.deviceNumber === "WSL-000039232") {
+    return NextResponse.json({ error: "Unit ini tidak dapat dihapus karena digunakan sebagai unit stock sistem" }, { status: 403 })
+  }
+
   if (unit._count.transactions > 0) {
     return NextResponse.json(
       { error: `Unit tidak dapat dihapus karena terhubung ke ${unit._count.transactions} transaksi` },

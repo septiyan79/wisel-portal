@@ -98,8 +98,8 @@ export async function POST(req: Request) {
       const rawCategory = row.category ? String(row.category).trim().toUpperCase() : null
       const rawDevice   = row.deviceNumber ? String(row.deviceNumber).trim() : null
 
-      // Transaksi stock: deviceNumber otomatis STOCK
-      const deviceNumber = rawCategory === "S" && !rawDevice ? "STOCK" : rawDevice
+      // Transaksi stock: deviceNumber otomatis WSL-000039232
+      const deviceNumber = rawCategory === "S" && !rawDevice ? "WSL-000039232" : rawDevice
 
       // Pastikan unit ada jika deviceNumber diisi
       if (deviceNumber) {
