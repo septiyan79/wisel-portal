@@ -3,9 +3,9 @@ import { prisma } from "@/lib/db"
 
 const SHEET_NAME = "export"
 const HEADERS = [
-  "Customer Account", "Customer Name", "SO Number", "Device Number", "Serial Number",
-  "Quotation", "PO Number", "Part Number", "AX Part Number", "Part Name",
-  "QTY", "Invoice Date", "Unit Price", "Total Price", "Category", "CHECK", "Packing Slip Date",
+  "Customer Account", "Customer Name", "Device Number", "Serial Number",
+  "Quot", "SO Number", "PO Number GPA", "PART NUMBER", "(AX) Part Number", "PART NAME",
+  "QTY", "Invoice Date", "Unit Price", "Total Price", "Category", "CHECK", "Packing Slip Date", "ExternalId",
 ]
 
 type CellValue = string | number
@@ -19,6 +19,7 @@ function fmtDate(date: Date): string {
 
 function buildRows(
   tx: {
+    externalId: string | null
     customerAccount: string | null
     customer: { customerName: string } | null
     soNumber: string | null
@@ -49,16 +50,17 @@ function buildRows(
   const base: CellValue[] = [
     tx.customerAccount ?? "",
     tx.customer?.customerName ?? "",
-    tx.soNumber ?? "",
   ]
   const mid: CellValue[] = [
     tx.quotation ?? "",
+    tx.soNumber ?? "",
     tx.poNumber ?? "",
     tx.partNumber ?? "",
     tx.axPartNumber ?? "",
     tx.partName ?? "",
   ]
   const invoiceDateStr = tx.invoiceDate ? fmtDate(tx.invoiceDate) : ""
+  const externalId = tx.externalId ?? ""
 
   if (tx.category !== "S") {
     rows.push([
@@ -73,6 +75,7 @@ function buildRows(
       tx.category ?? "",
       tx.check ?? "",
       tx.packingSlipDate ? fmtDate(tx.packingSlipDate) : "",
+      externalId,
     ])
     return rows
   }
@@ -92,6 +95,7 @@ function buildRows(
       "R",
       a.check ?? "",
       a.packingSlipDate ? fmtDate(a.packingSlipDate) : "",
+      externalId,
     ])
   }
 
@@ -112,6 +116,7 @@ function buildRows(
       "S",
       tx.check ?? "",
       tx.packingSlipDate ? fmtDate(tx.packingSlipDate) : "",
+      externalId,
     ])
   }
 
@@ -169,7 +174,7 @@ export async function exportToSheets(): Promise<void> {
 
   await sheets.spreadsheets.values.clear({
     spreadsheetId,
-    range: `${SHEET_NAME}!A:Q`,
+    range: `${SHEET_NAME}!A:R`,
   })
 
   await sheets.spreadsheets.values.update({
