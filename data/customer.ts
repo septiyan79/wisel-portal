@@ -1,4 +1,4 @@
-import { AlertCircle, Clock, Truck, CheckCircle, XCircle, ShoppingCart, Cpu, LayoutDashboard, KeyRound } from "lucide-react"
+import { AlertCircle, Clock, Truck, CheckCircle, XCircle, ShoppingCart, Cpu, LayoutDashboard, KeyRound, BookOpen } from "lucide-react"
 import type { ElementType } from "react"
 
 export type StatusConfig = {
@@ -39,13 +39,15 @@ const TRANSACTION_CHILDREN: DashboardNavChild[] = [
 ]
 
 export const NAV_ITEMS: DashboardNavItem[] = [
-  { id: "dashboard",    label: "Dashboard",  icon: LayoutDashboard, href: "/dashboard" },
-  { id: "transactions", label: "Transactions",  icon: ShoppingCart,    href: "/transactions", children: TRANSACTION_CHILDREN },
+  { id: "dashboard",    label: "Dashboard",   icon: LayoutDashboard, href: "/dashboard" },
+  { id: "transactions", label: "Transactions", icon: ShoppingCart,   href: "/transactions", children: TRANSACTION_CHILDREN },
+  { id: "docs",         label: "API Docs",    icon: BookOpen,        href: "/docs" },
 ]
 
 export const ADMIN_NAV_ITEMS: DashboardNavItem[] = [
-  { id: "dashboard",    label: "Dashboard",  icon: LayoutDashboard, href: "/dashboard" },
-  { id: "transactions", label: "Transactions",  icon: ShoppingCart,    href: "/transactions", children: TRANSACTION_CHILDREN },
-  { id: "units",        label: "Units",      icon: Cpu,             href: "/units" },
-  { id: "api-keys",     label: "API Keys",   icon: KeyRound,        href: "/api-keys" },
+  { id: "dashboard",    label: "Dashboard",   icon: LayoutDashboard, href: "/dashboard" },
+  { id: "transactions", label: "Transactions", icon: ShoppingCart,   href: "/transactions", children: TRANSACTION_CHILDREN },
+  { id: "units",        label: "Units",       icon: Cpu,             href: "/units" },
+  { id: "api-keys",     label: "API Keys",    icon: KeyRound,        href: "/api-keys" },
+  { id: "docs",         label: "API Docs",    icon: BookOpen,        href: "/docs" },
 ]
