@@ -178,8 +178,9 @@ export function StockDetailModal({ row, onClose, onChanged }: StockDetailModalPr
                         <th className="text-left px-4 py-2.5 text-xs font-bold text-gray-500">Device</th>
                         <th className="text-left px-4 py-2.5 text-xs font-bold text-gray-500">Fleet No.</th>
                         <th className="text-right px-4 py-2.5 text-xs font-bold text-gray-500">Qty</th>
+                        <th className="text-left px-4 py-2.5 text-xs font-bold text-gray-500">Category</th>
                         <th className="text-left px-4 py-2.5 text-xs font-bold text-gray-500">Packing Slip Date</th>
-                        <th className="text-left px-4 py-2.5 text-xs font-bold text-gray-500">Check</th>
+                        <th className="text-left px-4 py-2.5 text-xs font-bold text-gray-500">Notes</th>
                         <th className="px-4 py-2.5" />
                       </tr>
                     </thead>
@@ -189,6 +190,11 @@ export function StockDetailModal({ row, onClose, onChanged }: StockDetailModalPr
                           <td className="px-4 py-3 font-mono text-xs text-gray-900">{a.targetDeviceNumber}</td>
                           <td className="px-4 py-3 text-gray-600">{a.targetUnit.fleetNumber || "—"}</td>
                           <td className="px-4 py-3 text-right font-semibold text-gray-900">{a.qty}</td>
+                          <td className="px-4 py-3">
+                            {a.category === "P" && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">PM</span>}
+                            {a.category === "R" && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-600">Repair</span>}
+                            {!a.category && <span className="text-xs text-gray-300">—</span>}
+                          </td>
                           <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{fmtDate(a.packingSlipDate)}</td>
                           <td className="px-4 py-3 text-gray-500 text-xs">{a.check || "—"}</td>
                           <td className="px-4 py-3">

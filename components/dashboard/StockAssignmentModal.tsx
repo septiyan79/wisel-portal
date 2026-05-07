@@ -15,6 +15,7 @@ export type Assignment = {
   stockTransactionId: string
   targetDeviceNumber: string
   qty: number
+  category: string | null
   check: string | null
   packingSlipDate: string | null
   targetUnit: { deviceNumber: string; fleetNumber: string | null; model: string | null }
@@ -56,6 +57,7 @@ export function StockAssignmentModal({
   const [deviceSearch, setDeviceSearch] = useState(initial?.targetDeviceNumber ?? "")
   const [showDeviceDropdown, setShowDeviceDropdown] = useState(false)
   const [qty, setQty] = useState(initial?.qty != null ? String(initial.qty) : "")
+  const [category, setCategory] = useState(initial?.category ?? "R")
   const [check, setCheck] = useState(initial?.check ?? "")
   const [packingSlipDate, setPackingSlipDate] = useState(
     initial?.packingSlipDate ? initial.packingSlipDate.slice(0, 10) : ""
@@ -98,9 +100,10 @@ export function StockAssignmentModal({
     setLoading(true)
     const url = isEdit ? `/api/stock-assignments/${initial!.id}` : "/api/stock-assignments"
     const method = isEdit ? "PATCH" : "POST"
+    const resolvedCheck = category === "P" ? null : check || null
     const body = isEdit
-      ? { targetDeviceNumber, qty: Number(qty), check: check || null, packingSlipDate: packingSlipDate || null }
-      : { stockTransactionId, targetDeviceNumber, qty: Number(qty), check: check || null, packingSlipDate: packingSlipDate || null }
+      ? { targetDeviceNumber, qty: Number(qty), category: category || null, check: resolvedCheck, packingSlipDate: packingSlipDate || null }
+      : { stockTransactionId, targetDeviceNumber, qty: Number(qty), category: category || null, check: resolvedCheck, packingSlipDate: packingSlipDate || null }
 
     const res = await fetch(url, {
       method,
@@ -203,13 +206,36 @@ export function StockAssignmentModal({
             />
           </div>
 
+          {/* Category */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Category</label>
+            <select
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value)
+                if (e.target.value === "P") setCheck("")
+              }}
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#367C2B]"
+            >
+              <option value="R">Repair</option>
+              <option value="P">PM</option>
+            </select>
+          </div>
+
           {/* Check / Notes */}
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Notes</label>
+            <label className={`block text-xs font-semibold mb-1.5 ${category === "P" ? "text-gray-300" : "text-gray-500"}`}>
+              Notes
+            </label>
             <select
-              value={check}
+              value={category === "P" ? "" : check}
               onChange={(e) => setCheck(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#367C2B]"
+              disabled={category === "P"}
+              className={`w-full px-3 py-2.5 text-sm border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#367C2B] ${
+                category === "P"
+                  ? "border-gray-100 text-gray-300 cursor-not-allowed"
+                  : "border-gray-200 text-gray-900"
+              }`}
             >
               {CHECK_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>

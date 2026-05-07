@@ -79,6 +79,7 @@ model StockAssignment {
   stockTransactionId String
   targetDeviceNumber String
   qty                Int
+  category           String?
   check              String?
   packingSlipDate    DateTime?
   createdAt          DateTime    @default(now())
