@@ -109,6 +109,48 @@ export default async function DocsPage() {
             </p>
           </section>
 
+          {/* Query Parameters */}
+          <section className="bg-white rounded-2xl border border-gray-100 p-6">
+            <h2 className="font-bold text-gray-900 mb-1">Query Parameters</h2>
+            <div className="mt-1 h-0.5 w-6 bg-[#FFDE00] mb-4" />
+            <p className="text-sm text-gray-500 mb-3">Semua parameter bersifat opsional. Format tanggal: <code className="bg-gray-100 px-1 rounded text-xs font-mono">YYYY-MM-DD</code></p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="text-left text-xs font-semibold text-gray-500 pb-2 pr-4">Parameter</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 pb-2 pr-4">Type</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 pb-2">Keterangan</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {[
+                    { param: "invoiceDateFrom",     desc: "Filter invoice date mulai tanggal ini (inklusif)" },
+                    { param: "invoiceDateTo",       desc: "Filter invoice date sampai tanggal ini (inklusif)" },
+                    { param: "packingSlipDateFrom", desc: "Filter packing slip date mulai tanggal ini (inklusif)" },
+                    { param: "packingSlipDateTo",   desc: "Filter packing slip date sampai tanggal ini (inklusif)" },
+                  ].map((p) => (
+                    <tr key={p.param}>
+                      <td className="py-2.5 pr-4">
+                        <code className="text-xs font-mono text-gray-800 bg-gray-100 px-1.5 py-0.5 rounded">{p.param}</code>
+                      </td>
+                      <td className="py-2.5 pr-4">
+                        <span className="text-xs font-mono text-blue-600">string</span>
+                      </td>
+                      <td className="py-2.5 text-xs text-gray-600">{p.desc}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="bg-gray-900 rounded-xl p-4 mt-4">
+              <p className="text-xs text-gray-400 mb-2 font-mono">Contoh dengan filter</p>
+              <code className="text-xs font-mono text-green-400 whitespace-pre-wrap">{`GET /api/customer/items
+  ?invoiceDateFrom=2024-01-01
+  &invoiceDateTo=2024-12-31`}</code>
+            </div>
+          </section>
+
           {/* Error Responses */}
           <section className="bg-white rounded-2xl border border-gray-100 p-6">
             <h2 className="font-bold text-gray-900 mb-1">Error Responses</h2>

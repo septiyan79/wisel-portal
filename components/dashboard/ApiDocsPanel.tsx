@@ -6,8 +6,24 @@ import { Copy, Check, Play, Loader2 } from "lucide-react"
 const TABS = ["cURL", "JavaScript", "Python", "PHP"] as const
 type Tab = typeof TABS[number]
 
-function getCode(tab: Tab, baseUrl: string): string {
-  const url = `${baseUrl}/api/customer/items`
+type Filters = {
+  invoiceDateFrom: string
+  invoiceDateTo: string
+  packingSlipDateFrom: string
+  packingSlipDateTo: string
+}
+
+function buildUrl(base: string, filters: Filters): string {
+  const url = new URL(`${base}/api/customer/items`)
+  if (filters.invoiceDateFrom)     url.searchParams.set("invoiceDateFrom",     filters.invoiceDateFrom)
+  if (filters.invoiceDateTo)       url.searchParams.set("invoiceDateTo",       filters.invoiceDateTo)
+  if (filters.packingSlipDateFrom) url.searchParams.set("packingSlipDateFrom", filters.packingSlipDateFrom)
+  if (filters.packingSlipDateTo)   url.searchParams.set("packingSlipDateTo",   filters.packingSlipDateTo)
+  return url.toString()
+}
+
+function getCode(tab: Tab, baseUrl: string, filters: Filters): string {
+  const url = buildUrl(baseUrl, filters)
   const key = "wsl_your_api_key_here"
   switch (tab) {
     case "cURL":
@@ -21,16 +37,29 @@ function getCode(tab: Tab, baseUrl: string): string {
   }
 }
 
+const EMPTY_FILTERS: Filters = {
+  invoiceDateFrom: "",
+  invoiceDateTo: "",
+  packingSlipDateFrom: "",
+  packingSlipDateTo: "",
+}
+
 export function ApiDocsPanel({ baseUrl }: { baseUrl: string }) {
   const [activeTab, setActiveTab] = useState<Tab>("cURL")
   const [copied, setCopied] = useState(false)
+  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS)
 
   const [apiKey, setApiKey] = useState("")
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<{ status: number; body: string } | null>(null)
 
+  function setFilter(key: keyof Filters) {
+    return (e: React.ChangeEvent<HTMLInputElement>) =>
+      setFilters((prev) => ({ ...prev, [key]: e.target.value }))
+  }
+
   function copyCode() {
-    navigator.clipboard.writeText(getCode(activeTab, baseUrl))
+    navigator.clipboard.writeText(getCode(activeTab, baseUrl, filters))
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -39,21 +68,23 @@ export function ApiDocsPanel({ baseUrl }: { baseUrl: string }) {
     if (!apiKey.trim()) return
     setLoading(true)
     setResult(null)
-    const start = Date.now()
     try {
-      const res = await fetch("/api/customer/items", {
+      const params = new URLSearchParams()
+      if (filters.invoiceDateFrom)     params.set("invoiceDateFrom",     filters.invoiceDateFrom)
+      if (filters.invoiceDateTo)       params.set("invoiceDateTo",       filters.invoiceDateTo)
+      if (filters.packingSlipDateFrom) params.set("packingSlipDateFrom", filters.packingSlipDateFrom)
+      if (filters.packingSlipDateTo)   params.set("packingSlipDateTo",   filters.packingSlipDateTo)
+      const qs = params.toString()
+      const url = `/api/customer/items${qs ? "?" + qs : ""}`
+      const res = await fetch(url, {
         headers: { Authorization: `Bearer ${apiKey.trim()}` },
       })
       const body = await res.json()
-      setResult({
-        status: res.status,
-        body: JSON.stringify(body, null, 2),
-      })
+      setResult({ status: res.status, body: JSON.stringify(body, null, 2) })
     } catch {
       setResult({ status: 0, body: "Network error — pastikan server berjalan." })
     } finally {
       setLoading(false)
-      void start
     }
   }
 
@@ -64,6 +95,9 @@ export function ApiDocsPanel({ baseUrl }: { baseUrl: string }) {
       ? "text-red-600 bg-red-50 border-red-200"
       : "text-gray-600 bg-gray-50 border-gray-200"
 
+  const dateInputClass =
+    "w-full px-3 py-2 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+
   return (
     <>
       {/* Code Examples */}
@@ -71,7 +105,27 @@ export function ApiDocsPanel({ baseUrl }: { baseUrl: string }) {
         <h2 className="font-bold text-gray-900 mb-1">Code Examples</h2>
         <div className="mt-1 h-0.5 w-6 bg-[#FFDE00] mb-4" />
 
-        {/* Tabs */}
+        {/* Filter inputs (shared with Try It Out) */}
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Invoice Date From</label>
+            <input type="date" value={filters.invoiceDateFrom} onChange={setFilter("invoiceDateFrom")} className={dateInputClass} />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Invoice Date To</label>
+            <input type="date" value={filters.invoiceDateTo} onChange={setFilter("invoiceDateTo")} className={dateInputClass} />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Packing Slip From</label>
+            <input type="date" value={filters.packingSlipDateFrom} onChange={setFilter("packingSlipDateFrom")} className={dateInputClass} />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Packing Slip To</label>
+            <input type="date" value={filters.packingSlipDateTo} onChange={setFilter("packingSlipDateTo")} className={dateInputClass} />
+          </div>
+        </div>
+
+        {/* Language tabs */}
         <div className="flex gap-1 mb-3 bg-gray-100 p-1 rounded-lg">
           {TABS.map((tab) => (
             <button
@@ -98,7 +152,7 @@ export function ApiDocsPanel({ baseUrl }: { baseUrl: string }) {
             {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
           </button>
           <pre className="text-xs font-mono text-gray-200 leading-relaxed whitespace-pre-wrap pr-6">
-            {getCode(activeTab, baseUrl)}
+            {getCode(activeTab, baseUrl, filters)}
           </pre>
         </div>
       </section>
@@ -119,6 +173,10 @@ export function ApiDocsPanel({ baseUrl }: { baseUrl: string }) {
               className="w-full px-4 py-2.5 text-sm font-mono border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
             />
           </div>
+
+          <p className="text-xs text-gray-400">
+            Filter tanggal di-set dari bagian <span className="font-semibold text-gray-600">Code Examples</span> di atas.
+          </p>
 
           <button
             onClick={execute}

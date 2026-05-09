@@ -2,15 +2,45 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { getCustomerFromApiKey } from "@/lib/api-auth"
 
+function parseDate(value: string | null, endOfDay = false): Date | undefined {
+  if (!value) return undefined
+  const d = new Date(value)
+  if (isNaN(d.getTime())) return undefined
+  if (endOfDay) {
+    d.setUTCHours(23, 59, 59, 999)
+  }
+  return d
+}
+
 export async function GET(req: Request) {
   const customerAccount = await getCustomerFromApiKey(req)
   if (!customerAccount) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const { searchParams } = new URL(req.url)
+  const invoiceDateFrom     = parseDate(searchParams.get("invoiceDateFrom"))
+  const invoiceDateTo       = parseDate(searchParams.get("invoiceDateTo"), true)
+  const packingSlipDateFrom = parseDate(searchParams.get("packingSlipDateFrom"))
+  const packingSlipDateTo   = parseDate(searchParams.get("packingSlipDateTo"), true)
+
+  const invoiceDateFilter = (invoiceDateFrom || invoiceDateTo)
+    ? { gte: invoiceDateFrom, lte: invoiceDateTo }
+    : undefined
+
+  const packingSlipDateFilter = (packingSlipDateFrom || packingSlipDateTo)
+    ? { gte: packingSlipDateFrom, lte: packingSlipDateTo }
+    : undefined
+
   const [transactions, stockAssignments] = await Promise.all([
     prisma.transaction.findMany({
-      where: { customerAccount, isDeleted: false, NOT: { category: "S" } },
+      where: {
+        customerAccount,
+        isDeleted: false,
+        NOT: { category: "S" },
+        ...(invoiceDateFilter     && { invoiceDate:     invoiceDateFilter }),
+        ...(packingSlipDateFilter && { packingSlipDate: packingSlipDateFilter }),
+      },
       select: {
         id: true,
         soNumber: true,
@@ -33,7 +63,12 @@ export async function GET(req: Request) {
     }),
     prisma.stockAssignment.findMany({
       where: {
-        stockTransaction: { customerAccount, isDeleted: false },
+        stockTransaction: {
+          customerAccount,
+          isDeleted: false,
+          ...(invoiceDateFilter && { invoiceDate: invoiceDateFilter }),
+        },
+        ...(packingSlipDateFilter && { packingSlipDate: packingSlipDateFilter }),
       },
       select: {
         id: true,
