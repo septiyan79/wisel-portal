@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import ReactMarkdown from 'react-markdown'
 
 export interface ChatMessage {
   role: 'user' | 'assistant'
@@ -11,6 +10,36 @@ export interface ChatMessage {
 interface ChatMessagesProps {
   messages: ChatMessage[]
   isLoading: boolean
+}
+
+function SimpleMarkdown({ text }: { text: string }) {
+  const lines = text.split('\n')
+  return (
+    <>
+      {lines.map((line, i) => {
+        // Bold: **text**
+        const parts = line.split(/(\*\*[^*]+\*\*)/g).map((part, j) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={j}>{part.slice(2, -2)}</strong>
+          }
+          return part
+        })
+
+        if (line.startsWith('### ')) return <h3 key={i} className="font-semibold mt-2 mb-0.5">{parts.slice(1)}</h3>
+        if (line.startsWith('## ')) return <h2 key={i} className="font-bold mt-2 mb-0.5">{parts.slice(1)}</h2>
+        if (line.startsWith('# ')) return <h1 key={i} className="font-bold mt-2 mb-1">{parts.slice(1)}</h1>
+        if (line.startsWith('- ') || line.startsWith('• ')) {
+          return <div key={i} className="flex gap-1.5"><span className="mt-0.5 shrink-0">•</span><span>{parts.slice(1)}</span></div>
+        }
+        if (/^\d+\.\s/.test(line)) {
+          const match = line.match(/^(\d+)\.\s(.*)/)
+          return <div key={i} className="flex gap-1.5"><span className="shrink-0">{match![1]}.</span><span>{match![2]}</span></div>
+        }
+        if (line === '') return <div key={i} className="h-2" />
+        return <p key={i} className="leading-relaxed">{parts}</p>
+      })}
+    </>
+  )
 }
 
 export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
@@ -24,9 +53,7 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
         <p className="text-sm text-gray-500">Halo! Saya AI asisten Wisel.</p>
-        <p className="text-xs text-gray-400 mt-2">
-          Contoh pertanyaan:
-        </p>
+        <p className="text-xs text-gray-400 mt-2">Contoh pertanyaan:</p>
         <div className="mt-2 space-y-1 text-xs text-gray-400 text-left w-full max-w-65">
           <p>• &ldquo;Berapa total transaksi bulan ini?&rdquo;</p>
           <p>• &ldquo;Part apa yang paling banyak dibeli?&rdquo;</p>
@@ -49,9 +76,7 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
             }`}
           >
             {msg.role === 'assistant' ? (
-              <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-headings:my-1">
-                <ReactMarkdown>{msg.content}</ReactMarkdown>
-              </div>
+              <SimpleMarkdown text={msg.content} />
             ) : (
               <span className="whitespace-pre-wrap">{msg.content}</span>
             )}

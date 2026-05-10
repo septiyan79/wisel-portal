@@ -27,42 +27,26 @@ export function ChatBubble() {
         body: JSON.stringify({ messages: newMessages }),
       })
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
-      }
-      if (!response.body) throw new Error('No response body')
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
 
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let assistantText = ''
-
-      setMessages(prev => [...prev, { role: 'assistant', content: '' }])
-      setIsLoading(false)
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        assistantText += decoder.decode(value, { stream: true })
-        setMessages(prev => [
-          ...prev.slice(0, -1),
-          { role: 'assistant', content: assistantText },
-        ])
-      }
+      const { text } = await response.json()
+      setMessages(prev => [...prev, { role: 'assistant', content: text }])
     } catch {
-      setIsLoading(false)
       setMessages(prev => [
         ...prev,
         { role: 'assistant', content: 'Maaf, terjadi kesalahan. Pastikan GROQ_API_KEY sudah dikonfigurasi dan coba lagi.' },
       ])
+    } finally {
+      setIsLoading(false)
     }
   }, [input, isLoading, messages])
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
       {isOpen && (
-        <div className="w-[380px] h-[520px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden">
+        <div className="w-95 h-130 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="bg-[#367C2B] px-4 py-3 flex items-center justify-between flex-shrink-0">
+          <div className="bg-[#367C2B] px-4 py-3 flex items-center justify-between shrink-0">
             <div>
               <p className="text-white font-semibold text-sm">AI Assistant Wisel</p>
               <p className="text-green-200 text-xs">Powered by Groq · Llama 3.3</p>
