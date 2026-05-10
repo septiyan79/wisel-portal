@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { DashboardNavbar } from "@/components/dashboard/DashboardNavbar"
 import { SessionTimeout } from "@/components/dashboard/SessionTimeout"
+import { ChatBubble } from "@/components/chat/ChatBubble"
 
 export default async function DashboardLayout({
   children,
@@ -22,6 +23,7 @@ export default async function DashboardLayout({
       <main className="max-w-screen-2xl mx-auto px-2 md:px-3 py-6">
         {children}
       </main>
+      <ChatBubble />
     </div>
   )
 }
