@@ -1,4 +1,4 @@
-import { AlertCircle, Clock, Truck, CheckCircle, XCircle, ShoppingCart, Cpu, LayoutDashboard, KeyRound, BookOpen } from "lucide-react"
+import { AlertCircle, Clock, Truck, CheckCircle, XCircle, ShoppingCart, Cpu, LayoutDashboard, KeyRound, BookOpen, Users, Code2 } from "lucide-react"
 import type { ElementType } from "react"
 
 export type StatusConfig = {
@@ -44,10 +44,15 @@ export const NAV_ITEMS: DashboardNavItem[] = [
   { id: "docs",         label: "API Docs",    icon: BookOpen,        href: "/docs" },
 ]
 
+const API_CHILDREN: DashboardNavChild[] = [
+  { id: "api-keys", label: "API Keys", href: "/api-keys" },
+  { id: "docs",     label: "API Docs", href: "/docs" },
+]
+
 export const ADMIN_NAV_ITEMS: DashboardNavItem[] = [
   { id: "dashboard",    label: "Dashboard",   icon: LayoutDashboard, href: "/dashboard" },
   { id: "transactions", label: "Transactions", icon: ShoppingCart,   href: "/transactions", children: TRANSACTION_CHILDREN },
   { id: "units",        label: "Units",       icon: Cpu,             href: "/units" },
-  { id: "api-keys",     label: "API Keys",    icon: KeyRound,        href: "/api-keys" },
-  { id: "docs",         label: "API Docs",    icon: BookOpen,        href: "/docs" },
+  { id: "users",        label: "Users",       icon: Users,           href: "/users" },
+  { id: "api",          label: "API",         icon: Code2,           href: "/api-keys",  children: API_CHILDREN },
 ]
