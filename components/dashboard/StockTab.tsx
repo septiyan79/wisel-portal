@@ -1,8 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight, Search, Send } from "lucide-react"
 import { StockDetailModal, type StockRow } from "./StockDetailModal"
+import { useSortableTable, SortIcon } from "@/hooks/useSortableTable"
+
+type SortCol = "soNumber" | "partName" | "packingSlipDate" | "qty" | "assignedQty" | "remaining" | "totalPrice"
 
 interface StockTabProps {
   transactions: StockRow[]
@@ -35,6 +38,9 @@ export function StockTab({ transactions: initialTransactions }: StockTabProps) {
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<StockRow | null>(null)
+  const { sortCol, sortDir, toggleSort, sortRows } = useSortableTable<SortCol>()
+
+  useEffect(() => { setPage(1) }, [sortCol, sortDir])
 
   const filtered = transactions.filter((t) => {
     const q = search.toLowerCase()
@@ -47,9 +53,19 @@ export function StockTab({ transactions: initialTransactions }: StockTabProps) {
     )
   })
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const sorted = sortRows(filtered, {
+    soNumber:        (a, b) => (a.soNumber ?? "").localeCompare(b.soNumber ?? ""),
+    partName:        (a, b) => (a.partName ?? a.partNumber ?? "").localeCompare(b.partName ?? b.partNumber ?? ""),
+    packingSlipDate: (a, b) => (a.packingSlipDate ?? "").localeCompare(b.packingSlipDate ?? ""),
+    qty:             (a, b) => (a.qty ?? 0) - (b.qty ?? 0),
+    assignedQty:     (a, b) => a.assignedQty - b.assignedQty,
+    remaining:       (a, b) => ((a.qty ?? 0) - a.assignedQty) - ((b.qty ?? 0) - b.assignedQty),
+    totalPrice:      (a, b) => (a.totalPrice ?? 0) - (b.totalPrice ?? 0),
+  })
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
-  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+  const paginated = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
   const totalQty = transactions.reduce((s, t) => s + (t.qty ?? 0), 0)
   const totalAssigned = transactions.reduce((s, t) => s + t.assignedQty, 0)
@@ -113,14 +129,37 @@ export function StockTab({ transactions: initialTransactions }: StockTabProps) {
           <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b border-gray-100">
               <tr>
-                <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 whitespace-nowrap">SO Number</th>
-                <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 whitespace-nowrap">Part</th>
-                <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 whitespace-nowrap">Packing Slip Date</th>
-                <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 whitespace-nowrap">Qty</th>
-                <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 whitespace-nowrap">Assigned</th>
-                <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 whitespace-nowrap">Remaining</th>
+                {(
+                  [
+                    { col: "soNumber",       label: "SO Number",         align: "left"  },
+                    { col: "partName",        label: "Part",              align: "left"  },
+                    { col: "packingSlipDate", label: "Packing Slip Date", align: "left"  },
+                    { col: "qty",             label: "Qty",               align: "right" },
+                    { col: "assignedQty",     label: "Assigned",          align: "right" },
+                    { col: "remaining",       label: "Remaining",         align: "right" },
+                  ] as { col: SortCol; label: string; align: "left" | "right" }[]
+                ).map(({ col, label, align }) => (
+                  <th
+                    key={col}
+                    onClick={() => toggleSort(col)}
+                    className={`px-4 py-3 text-xs font-bold text-gray-500 whitespace-nowrap cursor-pointer select-none hover:text-gray-800 hover:bg-gray-100/70 transition-colors text-${align}`}
+                  >
+                    <span className={`inline-flex items-center gap-1 ${align === "right" ? "flex-row-reverse" : ""}`}>
+                      {label}
+                      <SortIcon active={sortCol === col} dir={sortDir} />
+                    </span>
+                  </th>
+                ))}
                 <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 whitespace-nowrap">Status</th>
-                <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 whitespace-nowrap">Total (Rp)</th>
+                <th
+                  onClick={() => toggleSort("totalPrice")}
+                  className="px-4 py-3 text-xs font-bold text-gray-500 whitespace-nowrap cursor-pointer select-none hover:text-gray-800 hover:bg-gray-100/70 transition-colors text-right"
+                >
+                  <span className="inline-flex items-center gap-1 flex-row-reverse">
+                    Total (Rp)
+                    <SortIcon active={sortCol === "totalPrice"} dir={sortDir} />
+                  </span>
+                </th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>

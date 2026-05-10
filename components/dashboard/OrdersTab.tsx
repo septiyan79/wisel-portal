@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Package, Eye, Plus, Pencil, Trash2, FileSpreadsheet } from "lucide-react"
+import { useSortableTable, SortIcon } from "@/hooks/useSortableTable"
 import { useRouter } from "next/navigation"
 import { OrderDetailModal } from "./OrderDetailModal"
 import { TransactionFormModal } from "./TransactionFormModal"
@@ -55,6 +56,8 @@ function fmtDate(iso: string | null | undefined) {
   })
 }
 
+type SortCol = "soNumber" | "partName" | "category" | "qty" | "totalPrice" | "packingSlipDate" | "fleetNumber"
+
 export function OrdersTab({ transactions, role }: OrdersTabProps) {
   const router = useRouter()
   const [selected, setSelected]     = useState<TransactionRow | null>(null)
@@ -69,6 +72,9 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
   const [page, setPage]             = useState(1)
   const [pageSize, setPageSize]     = useState(10)
   const [customers, setCustomers]   = useState<CustomerOption[]>([])
+  const { sortCol, sortDir, toggleSort, sortRows } = useSortableTable<SortCol>()
+
+  useEffect(() => { setPage(1) }, [sortCol, sortDir])
 
   useEffect(() => {
     if (role !== "customer") {
@@ -98,7 +104,17 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
     return true
   })
 
-  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize)
+  const sorted = sortRows(filtered, {
+    soNumber:        (a, b) => (a.soNumber ?? "").localeCompare(b.soNumber ?? ""),
+    partName:        (a, b) => (a.partName ?? a.partNumber ?? "").localeCompare(b.partName ?? b.partNumber ?? ""),
+    category:        (a, b) => (a.category ?? "").localeCompare(b.category ?? ""),
+    qty:             (a, b) => (a.qty ?? 0) - (b.qty ?? 0),
+    totalPrice:      (a, b) => (a.totalPrice ?? 0) - (b.totalPrice ?? 0),
+    packingSlipDate: (a, b) => (a.packingSlipDate ?? "").localeCompare(b.packingSlipDate ?? ""),
+    fleetNumber:     (a, b) => (a.fleetNumber ?? a.deviceNumber ?? "").localeCompare(b.fleetNumber ?? b.deviceNumber ?? ""),
+  })
+
+  const paginated = sorted.slice((page - 1) * pageSize, page * pageSize)
 
   function handleSaved() {
     setAdding(false)
@@ -273,13 +289,28 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/60">
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">SO Number</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Part</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden sm:table-cell">Category</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Qty</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden md:table-cell">Total</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden lg:table-cell">Packing Slip Date</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 hidden lg:table-cell">Fleet Number</th>
+                  {(
+                    [
+                      { col: "soNumber",        label: "SO Number",        cls: "whitespace-nowrap" },
+                      { col: "partName",         label: "Part",             cls: "" },
+                      { col: "category",         label: "Category",         cls: "hidden sm:table-cell" },
+                      { col: "qty",              label: "Qty",              cls: "" },
+                      { col: "totalPrice",       label: "Total",            cls: "hidden md:table-cell" },
+                      { col: "packingSlipDate",  label: "Packing Slip Date",cls: "hidden lg:table-cell" },
+                      { col: "fleetNumber",      label: "Fleet Number",     cls: "hidden lg:table-cell" },
+                    ] as { col: SortCol; label: string; cls: string }[]
+                  ).map(({ col, label, cls }) => (
+                    <th
+                      key={col}
+                      onClick={() => toggleSort(col)}
+                      className={`px-5 py-3 text-xs font-semibold text-gray-500 text-left cursor-pointer select-none hover:text-gray-800 hover:bg-gray-100/70 transition-colors ${cls}`}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        {label}
+                        <SortIcon active={sortCol === col} dir={sortDir} />
+                      </span>
+                    </th>
+                  ))}
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Actions</th>
                 </tr>
               </thead>

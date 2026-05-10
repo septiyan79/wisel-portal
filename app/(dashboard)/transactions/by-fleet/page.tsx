@@ -10,17 +10,12 @@ export default async function TransactionByFleetPage() {
       ? { isDeleted: false, customerAccount: session!.user.customerAccount, NOT: { deviceNumber: "STOCK" } }
       : { isDeleted: false, NOT: { deviceNumber: "STOCK" } }
 
-  const stockWhere =
-    session!.user.role === "customer"
-      ? { isDeleted: false, customerAccount: session!.user.customerAccount, category: "S" }
-      : { isDeleted: false, category: "S" }
-
   const assignWhere =
     session!.user.role === "customer"
       ? { stockTransaction: { isDeleted: false, customerAccount: session!.user.customerAccount } }
       : { stockTransaction: { isDeleted: false } }
 
-  const [raw, rawAssignments, units, stockAgg] = await Promise.all([
+  const [raw, rawAssignments, units] = await Promise.all([
     prisma.transaction.findMany({
       where: txWhere,
       select: { deviceNumber: true, category: true, totalPrice: true },
@@ -36,11 +31,6 @@ export default async function TransactionByFleetPage() {
     prisma.unit.findMany({
       where: { NOT: { deviceNumber: "STOCK" } },
       select: { deviceNumber: true, fleetNumber: true, serialNumber: true },
-    }),
-    prisma.transaction.aggregate({
-      where: stockWhere,
-      _count: { id: true },
-      _sum: { totalPrice: true },
     }),
   ])
 
@@ -58,7 +48,6 @@ export default async function TransactionByFleetPage() {
   const groups = new Map<string, Agg>()
   let globalPMCount = 0, globalPMPrice = 0
   let globalRepairCount = 0, globalRepairPrice = 0
-  let globalRawPrice = 0  // P+R only, for green KPI
 
   for (const t of raw) {
     const key = t.deviceNumber || "—"
@@ -78,7 +67,6 @@ export default async function TransactionByFleetPage() {
 
     if (isPM)     { globalPMCount++;     globalPMPrice     += price }
     if (isRepair) { globalRepairCount++; globalRepairPrice += price }
-    globalRawPrice += price
   }
 
   // Assignment rows dihitung sebagai Repair (tidak masuk green total)
@@ -120,8 +108,8 @@ export default async function TransactionByFleetPage() {
         pmPrice={globalPMPrice}
         repairCount={globalRepairCount}
         repairPrice={globalRepairPrice}
-        totalCount={raw.length + stockAgg._count.id}
-        totalPrice={globalRawPrice + (stockAgg._sum.totalPrice ?? 0)}
+        totalCount={globalPMCount + globalRepairCount}
+        totalPrice={globalPMPrice + globalRepairPrice}
       />
     </>
   )

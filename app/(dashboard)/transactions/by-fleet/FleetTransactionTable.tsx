@@ -1,8 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Pagination } from "@/components/dashboard/Pagination"
+import { useSortableTable, SortIcon } from "@/hooks/useSortableTable"
+
+type SortCol = "fleetNumber" | "serialNumber" | "pmPrice" | "repairPrice" | "totalPrice"
 
 function fmt(value: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -48,6 +51,9 @@ export default function FleetTransactionTable({
   const [search, setSearch]     = useState("")
   const [page, setPage]         = useState(1)
   const [pageSize, setPageSize] = useState(10)
+  const { sortCol, sortDir, toggleSort, sortRows } = useSortableTable<SortCol>()
+
+  useEffect(() => { setPage(1) }, [sortCol, sortDir])
 
   const filtered = fleets.filter((f) => {
     const q = search.toLowerCase()
@@ -58,7 +64,15 @@ export default function FleetTransactionTable({
     )
   })
 
-  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize)
+  const sorted = sortRows(filtered, {
+    fleetNumber:  (a, b) => (a.fleetNumber ?? a.fleet).localeCompare(b.fleetNumber ?? b.fleet),
+    serialNumber: (a, b) => (a.serialNumber ?? "").localeCompare(b.serialNumber ?? ""),
+    pmPrice:      (a, b) => a.pmPrice - b.pmPrice,
+    repairPrice:  (a, b) => a.repairPrice - b.repairPrice,
+    totalPrice:   (a, b) => a.totalPrice - b.totalPrice,
+  })
+
+  const paginated = sorted.slice((page - 1) * pageSize, page * pageSize)
 
   return (
     <div className="space-y-5">
@@ -121,11 +135,26 @@ export default function FleetTransactionTable({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/60">
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Fleet</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Serial Number</th>
-                  <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">PM Transactions</th>
-                  <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Repair Transactions</th>
-                  <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Total Transactions</th>
+                  {(
+                    [
+                      { col: "fleetNumber",  label: "Fleet",               align: "left"  },
+                      { col: "serialNumber", label: "Serial Number",        align: "left"  },
+                      { col: "pmPrice",      label: "PM Transactions",      align: "right" },
+                      { col: "repairPrice",  label: "Repair Transactions",  align: "right" },
+                      { col: "totalPrice",   label: "Total Transactions",   align: "right" },
+                    ] as { col: SortCol; label: string; align: "left" | "right" }[]
+                  ).map(({ col, label, align }) => (
+                    <th
+                      key={col}
+                      onClick={() => toggleSort(col)}
+                      className={`px-5 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap cursor-pointer select-none hover:text-gray-800 hover:bg-gray-100/70 transition-colors text-${align}`}
+                    >
+                      <span className={`inline-flex items-center gap-1 ${align === "right" ? "flex-row-reverse" : ""}`}>
+                        {label}
+                        <SortIcon active={sortCol === col} dir={sortDir} />
+                      </span>
+                    </th>
+                  ))}
                   <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500">Action</th>
                 </tr>
               </thead>
