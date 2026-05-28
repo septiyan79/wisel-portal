@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import PartTransactionTable from "./PartTransactionTable"
+import { TransactionKpiCards } from "@/components/dashboard/TransactionKpiCards"
 
 export default async function TransactionByPartPage() {
   const session = await auth()
@@ -44,10 +45,6 @@ export default async function TransactionByPartPage() {
   }
 
   const groups = new Map<string, Agg>()
-  let globalPMCount = 0, globalPMPrice = 0
-  let globalRepairCount = 0, globalRepairPrice = 0
-  let globalTotalCount = 0, globalTotalPrice = 0
-
   // P / R / O transactions
   for (const t of raw) {
     const key = t.partNumber || t.axPartNumber || "—"
@@ -64,11 +61,6 @@ export default async function TransactionByPartPage() {
       totalPrice:  cur.totalPrice  + price,
       totalQty:    cur.totalQty    + qty,
     })
-
-    if (isPM)     { globalPMCount++;     globalPMPrice     += price }
-    if (isRepair) { globalRepairCount++; globalRepairPrice += price }
-    globalTotalCount++
-    globalTotalPrice += price
   }
 
   // Stock transactions — qty = full stock qty (assigned + remaining)
@@ -86,13 +78,8 @@ export default async function TransactionByPartPage() {
       pmPrice:     cur.pmPrice,
       repairPrice: cur.repairPrice + assignedPrice,
       totalPrice:  cur.totalPrice  + assignedPrice,
-      totalQty:    cur.totalQty    + stockQty,        // full qty incl. remaining
+      totalQty:    cur.totalQty    + stockQty,
     })
-
-    globalRepairCount  += s.stockAssignments.length
-    globalRepairPrice  += assignedPrice
-    globalTotalCount   += s.stockAssignments.length
-    globalTotalPrice   += assignedPrice
   }
 
   const parts = [...groups.entries()]
@@ -113,15 +100,9 @@ export default async function TransactionByPartPage() {
         <div className="mt-1 h-0.5 w-10 bg-[#FFDE00]" />
       </div>
 
-      <PartTransactionTable
-        parts={parts}
-        pmCount={globalPMCount}
-        pmPrice={globalPMPrice}
-        repairCount={globalRepairCount}
-        repairPrice={globalRepairPrice}
-        totalCount={globalTotalCount}
-        totalPrice={globalTotalPrice}
-      />
+      <TransactionKpiCards role={session!.user.role} customerAccount={session!.user.customerAccount} />
+
+      <PartTransactionTable parts={parts} />
     </>
   )
 }

@@ -19,6 +19,10 @@ function fmt(n: number | null | undefined) {
   return n.toLocaleString("id-ID")
 }
 
+function fmtRupiah(n: number) {
+  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n)
+}
+
 function fmtDate(iso: string | null | undefined) {
   if (!iso) return "—"
   return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
@@ -71,6 +75,10 @@ export function StockTab({ transactions: initialTransactions }: StockTabProps) {
   const totalAssigned = transactions.reduce((s, t) => s + t.assignedQty, 0)
   const totalRemaining = totalQty - totalAssigned
 
+  const totalStockPrice = transactions.reduce((s, t) => s + (t.totalPrice ?? 0), 0)
+  const totalAssignedPrice = transactions.reduce((s, t) => s + t.assignedQty * (t.unitPrice ?? 0), 0)
+  const totalRemainingPrice = totalStockPrice - totalAssignedPrice
+
   function handleChanged() {
     // Refresh: fetch ulang dari server tidak bisa di client component,
     // jadi kita trigger reload dengan router, atau user bisa refresh manual.
@@ -98,16 +106,19 @@ export function StockTab({ transactions: initialTransactions }: StockTabProps) {
           <p className="text-xs text-gray-400 font-semibold uppercase">Total Stock</p>
           <p className="text-2xl font-black text-gray-900 mt-0.5">{transactions.length}</p>
           <p className="text-xs text-gray-400">Part Number</p>
+          <p className="text-xs font-semibold text-gray-500 mt-1 truncate">{fmtRupiah(totalStockPrice)}</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
           <p className="text-xs text-gray-400 font-semibold uppercase">Assigned</p>
           <p className="text-2xl font-black text-[#367C2B] mt-0.5">{totalAssigned}</p>
           <p className="text-xs text-gray-400">Qty</p>
+          <p className="text-xs font-semibold text-[#367C2B] mt-1 truncate">{fmtRupiah(totalAssignedPrice)}</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
           <p className="text-xs text-gray-400 font-semibold uppercase">Remaining</p>
           <p className="text-2xl font-black text-amber-600 mt-0.5">{totalRemaining}</p>
           <p className="text-xs text-gray-400">Qty</p>
+          <p className="text-xs font-semibold text-amber-600 mt-1 truncate">{fmtRupiah(totalRemainingPrice)}</p>
         </div>
       </div>
 

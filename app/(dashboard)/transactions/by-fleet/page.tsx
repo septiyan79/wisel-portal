@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import FleetTransactionTable from "./FleetTransactionTable"
+import { TransactionKpiCards } from "@/components/dashboard/TransactionKpiCards"
 
 export default async function TransactionByFleetPage() {
   const session = await auth()
@@ -46,8 +47,6 @@ export default async function TransactionByFleetPage() {
   }
 
   const groups = new Map<string, Agg>()
-  let globalPMCount = 0, globalPMPrice = 0
-  let globalRepairCount = 0, globalRepairPrice = 0
 
   for (const t of raw) {
     const key = t.deviceNumber || "—"
@@ -65,11 +64,8 @@ export default async function TransactionByFleetPage() {
       totalPrice:  cur.totalPrice  + price,
     })
 
-    if (isPM)     { globalPMCount++;     globalPMPrice     += price }
-    if (isRepair) { globalRepairCount++; globalRepairPrice += price }
   }
 
-  // Assignment rows dihitung sebagai Repair (tidak masuk green total)
   for (const a of rawAssignments) {
     const key = a.targetDeviceNumber
     const price = a.stockTransaction.unitPrice != null ? a.qty * a.stockTransaction.unitPrice : 0
@@ -81,8 +77,6 @@ export default async function TransactionByFleetPage() {
       totalCount:  cur.totalCount  + 1,
       totalPrice:  cur.totalPrice  + price,
     })
-    globalRepairCount++
-    globalRepairPrice += price
   }
 
   const fleets = [...groups.entries()]
@@ -101,16 +95,18 @@ export default async function TransactionByFleetPage() {
         <div className="mt-1 h-0.5 w-10 bg-[#FFDE00]" />
       </div>
 
-      <FleetTransactionTable
-        fleets={fleets}
-        totalFleet={fleets.length}
-        pmCount={globalPMCount}
-        pmPrice={globalPMPrice}
-        repairCount={globalRepairCount}
-        repairPrice={globalRepairPrice}
-        totalCount={globalPMCount + globalRepairCount}
-        totalPrice={globalPMPrice + globalRepairPrice}
+      <TransactionKpiCards
+        role={session!.user.role}
+        customerAccount={session!.user.customerAccount}
+        extraCard={
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+            <p className="text-2xl font-black text-gray-900">{fleets.length.toLocaleString("id-ID")}</p>
+            <p className="text-xs text-gray-500 mt-0.5">Total Fleet</p>
+          </div>
+        }
       />
+
+      <FleetTransactionTable fleets={fleets} />
     </>
   )
 }

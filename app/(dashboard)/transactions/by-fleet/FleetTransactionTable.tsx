@@ -29,25 +29,9 @@ export type FleetRow = {
 
 interface Props {
   fleets: FleetRow[]
-  totalFleet: number
-  pmCount: number
-  pmPrice: number
-  repairCount: number
-  repairPrice: number
-  totalCount: number
-  totalPrice: number
 }
 
-export default function FleetTransactionTable({
-  fleets,
-  totalFleet,
-  pmCount,
-  pmPrice,
-  repairCount,
-  repairPrice,
-  totalCount,
-  totalPrice,
-}: Props) {
+export default function FleetTransactionTable({ fleets }: Props) {
   const [search, setSearch]     = useState("")
   const [page, setPage]         = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -76,38 +60,6 @@ export default function FleetTransactionTable({
 
   return (
     <div className="space-y-5">
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-          <p className="text-2xl font-black text-gray-900">{totalFleet.toLocaleString("id-ID")}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Total Fleet</p>
-        </div>
-
-        <div className="bg-blue-50 rounded-xl p-4 border border-gray-100">
-          <span className="inline-block text-[11px] font-bold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full mb-2">
-            {pmCount.toLocaleString("id-ID")} tx
-          </span>
-          <p className="text-lg font-black text-blue-700 truncate">{fmt(pmPrice)}</p>
-          <p className="text-xs text-gray-500 mt-0.5">PM Transactions</p>
-        </div>
-
-        <div className="bg-orange-50 rounded-xl p-4 border border-gray-100">
-          <span className="inline-block text-[11px] font-bold bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full mb-2">
-            {repairCount.toLocaleString("id-ID")} tx
-          </span>
-          <p className="text-lg font-black text-orange-600 truncate">{fmt(repairPrice)}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Repair Transactions</p>
-        </div>
-
-        <div className="bg-green-50 rounded-xl p-4 border border-gray-100">
-          <span className="inline-block text-[11px] font-bold bg-green-100 text-[#367C2B] px-2 py-0.5 rounded-full mb-2">
-            {totalCount.toLocaleString("id-ID")} tx
-          </span>
-          <p className="text-lg font-black text-[#367C2B] truncate">{fmt(totalPrice)}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Total Transactions</p>
-        </div>
-      </div>
-
       {/* Search */}
       <div className="flex items-center gap-3">
         <input

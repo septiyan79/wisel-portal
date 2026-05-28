@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { OrdersTab } from "@/components/dashboard/OrdersTab"
+import { TransactionKpiCards } from "@/components/dashboard/TransactionKpiCards"
 
 function fmt(value: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -72,7 +73,7 @@ export default async function TransactionSummaryPage() {
       axPartNumber:    p.axPartNumber,
       partName:        p.partName,
       qty:             a.qty,
-      category:        "R" as const,
+      category:        a.category ?? "R",
       invoiceDate:     p.invoiceDate?.toISOString()     ?? null,
       packingSlipDate: a.packingSlipDate?.toISOString() ?? null,
       unitPrice:       p.unitPrice,
@@ -91,22 +92,6 @@ export default async function TransactionSummaryPage() {
     if (!b.invoiceDate) return -1
     return b.invoiceDate.localeCompare(a.invoiceDate)
   })
-
-  // ── KPI ───────────────────────────────────────────────────────
-  let totalPM = 0, totalPMPrice = 0
-  let totalRepair = 0, totalRepairPrice = 0
-
-  for (const t of raw) {
-    if (t.category === "P") { totalPM++;     totalPMPrice     += t.totalPrice ?? 0 }
-    if (t.category === "R") { totalRepair++; totalRepairPrice += t.totalPrice ?? 0 }
-  }
-  for (const a of rawAssignments) {
-    const price = a.stockTransaction.unitPrice != null ? a.qty * a.stockTransaction.unitPrice : 0
-    totalRepair++
-    totalRepairPrice += price
-  }
-  const totalCount    = totalPM + totalRepair
-  const totalAllPrice = totalPMPrice + totalRepairPrice
 
   // ── Value by Month ────────────────────────────────────────────
   const monthMap = new Map<string, { label: string; count: number; value: number }>()
@@ -171,32 +156,7 @@ export default async function TransactionSummaryPage() {
         <div className="mt-1 h-0.5 w-10 bg-[#FFDE00]" />
       </div>
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-        <div className="bg-blue-50 rounded-xl p-4 border border-gray-100">
-          <span className="inline-block text-[11px] font-bold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full mb-2">
-            {totalPM.toLocaleString("id-ID")} tx
-          </span>
-          <p className="text-lg font-black text-blue-700 truncate">{fmt(totalPMPrice)}</p>
-          <p className="text-xs text-gray-500 mt-0.5">PM Transactions</p>
-        </div>
-
-        <div className="bg-orange-50 rounded-xl p-4 border border-gray-100">
-          <span className="inline-block text-[11px] font-bold bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full mb-2">
-            {totalRepair.toLocaleString("id-ID")} tx
-          </span>
-          <p className="text-lg font-black text-orange-600 truncate">{fmt(totalRepairPrice)}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Repair Transactions</p>
-        </div>
-
-        <div className="bg-green-50 rounded-xl p-4 border border-gray-100">
-          <span className="inline-block text-[11px] font-bold bg-green-100 text-[#367C2B] px-2 py-0.5 rounded-full mb-2">
-            {totalCount.toLocaleString("id-ID")} tx
-          </span>
-          <p className="text-lg font-black text-[#367C2B] truncate">{fmt(totalAllPrice)}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Total Transactions</p>
-        </div>
-      </div>
+      <TransactionKpiCards role={session!.user.role} customerAccount={session!.user.customerAccount} />
 
       {/* 3 data cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
