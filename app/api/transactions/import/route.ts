@@ -26,6 +26,20 @@ function normalizeHeader(h: unknown): string {
   return String(h ?? "").trim().toLowerCase()
 }
 
+// Kategori disimpan sebagai kode 1 huruf (P/R/S) — KPI card dan filter Stock
+// mencocokkan persis kode ini, jadi kata penuh dari Excel harus dipetakan dulu.
+const CATEGORY_MAP: Record<string, string> = {
+  P: "P", PM: "P",
+  R: "R", REPAIR: "R",
+  S: "S", STOCK: "S",
+}
+
+function normalizeCategory(val: unknown): string | null {
+  if (!val) return null
+  const key = String(val).trim().toUpperCase()
+  return CATEGORY_MAP[key] ?? null
+}
+
 function parseDate(val: unknown): string | null {
   if (!val) return null
   // Number = Excel serial date — parse_date_code adalah aritmatika murni, bebas timezone
@@ -95,8 +109,13 @@ export async function POST(req: Request) {
     const rowNum = i + 2 // baris 1 = header
 
     try {
-      const rawCategory = row.category ? String(row.category).trim().toUpperCase() : null
+      const rawCategory = normalizeCategory(row.category)
       const rawDevice   = row.deviceNumber ? String(row.deviceNumber).trim() : null
+
+      if (row.category && !rawCategory) {
+        errors.push({ row: rowNum, message: `Category "${row.category}" tidak dikenali (gunakan PM, Repair, atau Stock)` })
+        continue
+      }
 
       // Transaksi stock: deviceNumber otomatis WSL-000039232
       const deviceNumber = rawCategory === "S" && !rawDevice ? "WSL-000039232" : rawDevice

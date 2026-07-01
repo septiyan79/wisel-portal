@@ -27,6 +27,7 @@ interface ImportResult {
 
 // ── Template definitions ────────────────────────────────────────
 
+// Category hanya menerima: PM, Repair, atau Stock (case-insensitive)
 const TRANSACTION_TEMPLATE = [
   {
     "SO Number": "SO-2025-001",
@@ -35,12 +36,42 @@ const TRANSACTION_TEMPLATE = [
     "Part Number": "RE504836",
     "AX Part Number": "",
     "Nama Part": "Filter Oli Mesin",
-    "Category": "Repair",
+    "Category": "PM",
     "Qty": 5,
     "Invoice Date": "2025-04-01",
     "Packing Slip Date": "2025-04-03",
     "Harga Satuan": 240000,
     "Total Harga": 1200000,
+    "No. Unit / Device": "",
+  },
+  {
+    "SO Number": "SO-2025-002",
+    "Quotation": "Q-002",
+    "PO Number": "PO-002",
+    "Part Number": "RE504837",
+    "AX Part Number": "",
+    "Nama Part": "Belt Kompresor",
+    "Category": "Repair",
+    "Qty": 2,
+    "Invoice Date": "2025-04-02",
+    "Packing Slip Date": "2025-04-04",
+    "Harga Satuan": 350000,
+    "Total Harga": 700000,
+    "No. Unit / Device": "",
+  },
+  {
+    "SO Number": "SO-2025-003",
+    "Quotation": "Q-003",
+    "PO Number": "PO-003",
+    "Part Number": "RE504838",
+    "AX Part Number": "",
+    "Nama Part": "Filter Udara",
+    "Category": "Stock",
+    "Qty": 10,
+    "Invoice Date": "2025-04-05",
+    "Packing Slip Date": "2025-04-06",
+    "Harga Satuan": 150000,
+    "Total Harga": 1500000,
     "No. Unit / Device": "",
   },
 ]
@@ -142,6 +173,9 @@ export function ImportModal({ type, role, customers = [], onClose, onImported }:
             <div>
               <p className="text-sm font-semibold text-gray-700">Download Template</p>
               <p className="text-xs text-gray-400 mt-0.5">Use this format to ensure a successful import</p>
+              {type === "transactions" && (
+                <p className="text-xs text-gray-400 mt-0.5">Category must be: PM, Repair, or Stock</p>
+              )}
             </div>
             <button
               type="button"
