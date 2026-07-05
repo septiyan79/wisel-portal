@@ -15,6 +15,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const user = await prisma.user.findUnique({ where: { id } })
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })
 
+  if (user.role === "admin" && role && role !== "admin") {
+    return NextResponse.json({ error: "The admin account's role cannot be changed" }, { status: 400 })
+  }
+
   if (role === "admin" && user.role !== "admin") {
     const existingAdmin = await prisma.user.findFirst({ where: { role: "admin", NOT: { id } } })
     if (existingAdmin) {

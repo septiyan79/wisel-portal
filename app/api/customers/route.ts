@@ -8,6 +8,7 @@ export async function GET() {
   if (session.user.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const customers = await prisma.customer.findMany({
+    where: { users: { none: { role: "admin" } } },
     orderBy: { customerName: "asc" },
     select: { customerAccount: true, customerName: true },
   })

@@ -75,6 +75,7 @@ function UserFormModal({
   )
 
   const isCreate = mode === "create"
+  const lockRole = !isCreate && user?.role === "admin"
 
   useEffect(() => {
     fetch("/api/customers")
@@ -220,7 +221,8 @@ function UserFormModal({
               <button
                 type="button"
                 onClick={() => setRole("customer")}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold border transition-colors ${
+                disabled={lockRole}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                   role === "customer"
                     ? "bg-blue-50 border-blue-300 text-blue-700"
                     : "border-gray-200 text-gray-500 hover:bg-gray-50"
@@ -232,7 +234,8 @@ function UserFormModal({
               <button
                 type="button"
                 onClick={() => setRole("customer_user")}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold border transition-colors ${
+                disabled={lockRole}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                   role === "customer_user"
                     ? "bg-teal-50 border-teal-300 text-teal-700"
                     : "border-gray-200 text-gray-500 hover:bg-gray-50"
@@ -244,7 +247,7 @@ function UserFormModal({
               <button
                 type="button"
                 onClick={() => setRole("admin")}
-                disabled={!!existingAdminUsername}
+                disabled={!!existingAdminUsername || lockRole}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                   role === "admin"
                     ? "bg-purple-50 border-purple-300 text-purple-700"
@@ -260,9 +263,14 @@ function UserFormModal({
                 Same data access as Customer — an additional login for the same Account ID.
               </p>
             )}
-            {existingAdminUsername && (
+            {existingAdminUsername && !lockRole && (
               <p className="text-[11px] text-gray-400 mt-1">
                 Only one admin account is allowed — that role is already used by &quot;{existingAdminUsername}&quot;.
+              </p>
+            )}
+            {lockRole && (
+              <p className="text-[11px] text-amber-600 mt-1">
+                The admin role is fixed and cannot be changed here — this prevents the system from being left with no admin at all.
               </p>
             )}
           </div>
