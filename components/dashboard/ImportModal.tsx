@@ -76,12 +76,14 @@ const TRANSACTION_TEMPLATE = [
   },
 ]
 
+// Customer Account wajib diisi dengan customerAccount yang sudah terdaftar
 const UNIT_TEMPLATE = [
   {
     "Device Number": "JD-001",
     "Serial Number": "SN-123456",
     "Fleet Number": "FL-01",
     "Model / Tipe": "John Deere 6120",
+    "Customer Account": "C1918",
   },
 ]
 
@@ -175,6 +177,9 @@ export function ImportModal({ type, role, customers = [], onClose, onImported }:
               <p className="text-xs text-gray-400 mt-0.5">Use this format to ensure a successful import</p>
               {type === "transactions" && (
                 <p className="text-xs text-gray-400 mt-0.5">Category must be: PM, Repair, or Stock</p>
+              )}
+              {type === "units" && (
+                <p className="text-xs text-gray-400 mt-0.5">Customer Account must match an existing customer</p>
               )}
             </div>
             <button

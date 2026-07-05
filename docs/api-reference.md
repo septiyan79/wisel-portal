@@ -24,15 +24,15 @@ Auth: **API key only** (`Bearer wsl_...`), no session path. Query params (all op
 
 ### `GET/POST /api/transactions`
 - **GET**: session required. Scoped by role (`customer` → own `customerAccount`, others → all), always excludes `category: "S"`. Returns selected fields ordered by `invoiceDate` desc.
-- **POST**: session required, no role restriction. Body: single object or array. `resolvedAccount`: admins may set an arbitrary `customerAccount`; customers are always forced to their own. Creates with `source: "manual"` hard-coded, **no unit-existence check** (unlike import), **no `$transaction` batching** (partial failure mid-array possible). Fires `void exportToSheets()`. Returns `201`.
+- **POST**: session required, no role restriction. Body: single object or array. `resolvedAccount`: admins may set an arbitrary `customerAccount`; customers are always forced to their own. **Since 2026-07-05**: if `deviceNumber` is set, validates via `lib/unit-validation.ts` `validateUnitOwnership()` that the unit exists *and* belongs to `resolvedAccount` — all items in the array are validated before any are created (400 aborts the whole request, nothing is written). Creates with `source: "manual"` hard-coded, **no `$transaction` batching** (partial failure mid-array still possible once past validation). Fires `void exportToSheets()`. Returns `201`.
 
 ### `PATCH/DELETE /api/transactions/[id]`
 Shared ownership helper only allows mutation when `source === "manual"` AND (admin, or customer owns the row) — everything else 404s, including provider/import rows (surfaced identically to "not found").
-- **PATCH**: full-overwrite semantics — omitted fields become `null` (not skipped). `customerAccount` is never editable. Fires `exportToSheets()`.
+- **PATCH**: full-overwrite semantics — omitted fields become `null` (not skipped). `customerAccount` is never editable. **Since 2026-07-05**: if `deviceNumber` is set, validates it belongs to the transaction's own (immutable) `customerAccount` via `validateUnitOwnership()` — 400 if not. Fires `exportToSheets()`.
 - **DELETE**: soft delete (`isDeleted: true, deletedAt: now`). Fires `exportToSheets()`.
 
 ### `POST /api/transactions/import`
-Multipart `file` (+ optional `customerAccount`, admin-only override). Session required, no role restriction (customers can import their own data). Header mapping is case-insensitive Indonesian/English labels (`"harga satuan"→unitPrice`, etc). **Category normalization**: `P/PM→P`, `R/REPAIR→R`, `S/STOCK→S` (case-insensitive); unrecognized non-empty value → row error, row skipped. **Date parsing**: handles Excel serial dates via `XLSX.SSF.parse_date_code`; string dates try strict ISO first, then a generic regex — ⚠️ the DD/MM vs MM/DD fallback logic's code and its own comment disagree on which format is assumed (see known-issues.md). Stock rows (`category "S"`) with no device number auto-get `deviceNumber: "WSL-000039232"`. **Referenced `deviceNumber` must already exist** in `Unit` or the row errors (no auto-create, unlike units import). Creates with `source: "import"`. Fires `exportToSheets()` only if `success > 0`. Returns `{ success, errors: {row, message}[], total }`.
+Multipart `file` (+ optional `customerAccount`, admin-only override). Session required, no role restriction (customers can import their own data). Header mapping is case-insensitive Indonesian/English labels (`"harga satuan"→unitPrice`, etc). **Category normalization**: `P/PM→P`, `R/REPAIR→R`, `S/STOCK→S` (case-insensitive); unrecognized non-empty value → row error, row skipped. **Date parsing**: handles Excel serial dates via `XLSX.SSF.parse_date_code`; string dates try strict ISO first, then a generic regex — ⚠️ the DD/MM vs MM/DD fallback logic's code and its own comment disagree on which format is assumed (see known-issues.md). Stock rows (`category "S"`) with no device number auto-get `deviceNumber: SYSTEM_STOCK_DEVICE` (`"WSL-000039232"`). **Referenced `deviceNumber` must exist and belong to `resolvedAccount`** (via `validateUnitOwnership()`, since 2026-07-05) or the row errors — **except** `SYSTEM_STOCK_DEVICE`, which is only existence-checked (it's a shared bucket, not owned by one customer; see known-issues.md). No auto-create of units (unlike units import). Creates with `source: "import"`. Fires `exportToSheets()` only if `success > 0`. Returns `{ success, errors: {row, message}[], total }`.
 
 ## Sync
 
@@ -48,23 +48,23 @@ Multipart `file` (+ optional `customerAccount`, admin-only override). Session re
 
 ### `GET/POST /api/stock-assignments`
 - **GET**: session required; query param `transactionId` required. Loads parent transaction; 403 if customer doesn't own it, 404 if not found. Returns assignments for that transaction with `targetUnit` info.
-- **POST**: session required. Body: `{ stockTransactionId, targetDeviceNumber, qty, category?, check?, packingSlipDate? }`. Validates `qty > 0`, `targetDeviceNumber !== "STOCK"`, parent exists and `category === "S"`, ownership. **Remaining-quantity guard**: `qty` cannot exceed `(transaction.qty ?? 0) - sum(existing assignments)`. Fires `exportToSheets()`. Returns `201`.
+- **POST**: session required. Body: `{ stockTransactionId, targetDeviceNumber, qty, category?, check?, packingSlipDate? }`. Validates `qty > 0`, `targetDeviceNumber !== "STOCK"`, parent exists and `category === "S"`, ownership, and (since 2026-07-05) that `targetDeviceNumber` belongs to the same `customerAccount` as the parent stock transaction via `validateUnitOwnership()` (400 if not — previously an invalid/foreign device would either silently attach or throw an unhandled FK error). **Remaining-quantity guard**: `qty` cannot exceed `(transaction.qty ?? 0) - sum(existing assignments)`. Fires `exportToSheets()`. Returns `201`.
 
 ### `PATCH/DELETE /api/stock-assignments/[id]`
-- **PATCH**: session + ownership check. **Partial update** (only provided fields change — contrast with the transactions PATCH which nulls omitted fields). Remaining-qty guard recomputed *excluding the assignment being edited itself*. Fires `exportToSheets()`.
+- **PATCH**: session + ownership check. **Partial update** (only provided fields change — contrast with the transactions PATCH which nulls omitted fields). If `targetDeviceNumber` is being changed, validates ownership against the parent stock transaction's `customerAccount` (since 2026-07-05, same as POST). Remaining-qty guard recomputed *excluding the assignment being edited itself*. Fires `exportToSheets()`.
 - **DELETE**: session + ownership. **Hard delete** (contrast with `Transaction`'s soft delete). Fires `exportToSheets()`.
 
 ## Units
 
 ### `GET/POST /api/units`
-- **GET**: session required, **no role gate, no customer scoping** — every authenticated user sees the full unit master list.
-- **POST**: session + admin-only (`role === "customer"` → 403). Requires non-blank `deviceNumber`; explicit pre-check for uniqueness (409 if taken) rather than relying on the DB constraint error.
+- **GET**: session required. **Scoped since 2026-07-05**: `role === "customer"` → only units where `customerAccount` matches their own; any other role → full list.
+- **POST**: session + admin-only (`role === "customer"` → 403). Requires non-blank `deviceNumber` **and** non-blank `customerAccount` (400 if either missing; 404 if `customerAccount` doesn't match an existing `Customer`). Explicit pre-check for `deviceNumber` uniqueness (409 if taken) rather than relying on the DB constraint error.
 
 ### `PATCH/DELETE /api/units/[id]`
-Admin-only. The hardcoded placeholder unit `"WSL-000039232"` cannot be edited or deleted (403). DELETE also checks `_count.transactions` and blocks (409) if `> 0` — **but does not check `StockAssignment.targetDeviceNumber` usage**, so a unit could still be referenced there and get deleted anyway. Hard delete.
+Admin-only. `customerAccount` is required on PATCH too (same 400/404 validation as POST) — a unit can be reassigned to a different customer this way, but not unassigned. The hardcoded placeholder unit `"WSL-000039232"` cannot be edited or deleted (403). DELETE also checks `_count.transactions` and blocks (409) if `> 0` — **but does not check `StockAssignment.targetDeviceNumber` usage**, so a unit could still be referenced there and get deleted anyway. Hard delete.
 
 ### `POST /api/units/import`
-Admin-only (unlike transaction import). Multipart `file` only (no customer override field). Header mapping: `device number, serial number, fleet number, "model / tipe"/model`. **Upserts by `deviceNumber`** (create-or-update — contrast with transaction import, which requires the unit to pre-exist). `customerAccount` is never set/touched by this import path. Any thrown error during upsert is reported with a generic "conflicting serial number" message regardless of actual cause.
+Admin-only (unlike transaction import). Multipart `file` only. Header mapping: `device number, serial number, fleet number, "model / tipe"/model, "customer account"/customer → customerAccount` (customer column added 2026-07-05). **Upserts by `deviceNumber`** (create-or-update — contrast with transaction import, which requires the unit to pre-exist); `customerAccount` is required per row and validated against the `Customer` table (row errors if missing/unrecognized) and is updated on every re-import, so re-uploading with a different `Customer Account` for an existing `deviceNumber` is the bulk way to reassign a unit's owner. Any thrown error during upsert is reported with a generic "conflicting serial number" message regardless of actual cause.
 
 ## Admin
 

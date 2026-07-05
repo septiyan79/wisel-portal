@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { exportToSheets } from "@/lib/gsheets"
+import { validateUnitOwnership } from "@/lib/unit-validation"
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -31,6 +32,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
   if (targetDeviceNumber === "STOCK") {
     return NextResponse.json({ error: "Cannot assign to STOCK placeholder" }, { status: 400 })
+  }
+
+  if (targetDeviceNumber !== undefined && tx.customerAccount) {
+    const ownershipError = await validateUnitOwnership(targetDeviceNumber, tx.customerAccount)
+    if (ownershipError) {
+      return NextResponse.json({ error: ownershipError }, { status: 400 })
+    }
   }
 
   if (qty != null) {

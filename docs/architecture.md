@@ -47,6 +47,7 @@ lib/
 ├── auth.ts        ← NextAuth config (Credentials provider, JWT callbacks)
 ├── db.ts          ← Prisma client singleton with connection-retry wrapper
 ├── api-auth.ts     ← getCustomerFromApiKey() for Bearer wsl_* API-key auth
+├── unit-validation.ts ← validateUnitOwnership() — cross-checks a deviceNumber's Unit.customerAccount against an expected owner
 ├── gsheets.ts     ← exportToSheets() — mirrors Transaction+StockAssignment to a Google Sheet
 ├── chat-tools.ts  ← Prisma query helpers used as AI chat tool implementations
 └── utils.ts

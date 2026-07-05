@@ -50,7 +50,7 @@ async function main() {
   await prisma.unit.upsert({
     where: { deviceNumber: "STOCK" },
     update: {},
-    create: { deviceNumber: "STOCK", model: "Stock Gudang" },
+    create: { deviceNumber: "STOCK", model: "Stock Gudang", customerAccount: "W0001" },
   })
 
   console.log("Seed done:")

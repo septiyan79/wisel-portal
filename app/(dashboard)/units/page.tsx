@@ -17,6 +17,7 @@ export default async function UnitsPage() {
         fleetNumber: true,
         model: true,
         createdAt: true,
+        customerAccount: true,
         customer: { select: { customerName: true } },
       },
     }),
@@ -33,6 +34,7 @@ export default async function UnitsPage() {
     fleetNumber: u.fleetNumber,
     model: u.model,
     createdAt: u.createdAt.toISOString(),
+    customerAccount: u.customerAccount,
     customerName: u.customer?.customerName ?? null,
   }))
 

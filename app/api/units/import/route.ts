@@ -4,11 +4,13 @@ import { prisma } from "@/lib/db"
 import * as XLSX from "xlsx"
 
 const COL_MAP: Record<string, string> = {
-  "device number":  "deviceNumber",
-  "serial number":  "serialNumber",
-  "fleet number":   "fleetNumber",
-  "model / tipe":   "model",
-  "model":          "model",
+  "device number":   "deviceNumber",
+  "serial number":   "serialNumber",
+  "fleet number":    "fleetNumber",
+  "model / tipe":    "model",
+  "model":           "model",
+  "customer account": "customerAccount",
+  "customer":         "customerAccount",
 }
 
 function normalizeHeader(h: unknown): string {
@@ -44,6 +46,10 @@ export async function POST(req: Request) {
     return out
   })
 
+  const validCustomerAccounts = new Set(
+    (await prisma.customer.findMany({ select: { customerAccount: true } })).map((c) => c.customerAccount)
+  )
+
   let success = 0
   const errors: { row: number; message: string }[] = []
 
@@ -52,9 +58,18 @@ export async function POST(req: Request) {
     const rowNum = i + 2
 
     const deviceNumber = row.deviceNumber ? String(row.deviceNumber).trim() : null
+    const customerAccount = row.customerAccount ? String(row.customerAccount).trim() : null
 
     if (!deviceNumber) {
       errors.push({ row: rowNum, message: "Device Number wajib diisi" })
+      continue
+    }
+    if (!customerAccount) {
+      errors.push({ row: rowNum, message: "Customer Account wajib diisi" })
+      continue
+    }
+    if (!validCustomerAccounts.has(customerAccount)) {
+      errors.push({ row: rowNum, message: `Customer Account "${customerAccount}" tidak ditemukan` })
       continue
     }
 
@@ -62,15 +77,17 @@ export async function POST(req: Request) {
       await prisma.unit.upsert({
         where: { deviceNumber },
         update: {
-          serialNumber: row.serialNumber ? String(row.serialNumber).trim() : null,
-          fleetNumber:  row.fleetNumber  ? String(row.fleetNumber).trim()  : null,
-          model:        row.model        ? String(row.model).trim()        : null,
+          serialNumber:    row.serialNumber ? String(row.serialNumber).trim() : null,
+          fleetNumber:     row.fleetNumber  ? String(row.fleetNumber).trim()  : null,
+          model:           row.model        ? String(row.model).trim()        : null,
+          customerAccount,
         },
         create: {
           deviceNumber,
-          serialNumber: row.serialNumber ? String(row.serialNumber).trim() : null,
-          fleetNumber:  row.fleetNumber  ? String(row.fleetNumber).trim()  : null,
-          model:        row.model        ? String(row.model).trim()        : null,
+          serialNumber:    row.serialNumber ? String(row.serialNumber).trim() : null,
+          fleetNumber:     row.fleetNumber  ? String(row.fleetNumber).trim()  : null,
+          model:           row.model        ? String(row.model).trim()        : null,
+          customerAccount,
         },
       })
       success++

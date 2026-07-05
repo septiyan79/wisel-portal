@@ -3,6 +3,11 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import * as XLSX from "xlsx"
 import { exportToSheets } from "@/lib/gsheets"
+import { validateUnitOwnership } from "@/lib/unit-validation"
+
+// Bucket stok gudang generik lintas-customer — dikecualikan dari cek kepemilikan
+// karena Unit.customerAccount wajib diisi tapi unit ini bukan milik satu customer tertentu.
+const SYSTEM_STOCK_DEVICE = "WSL-000039232"
 
 // Kolom yang diharapkan (case-insensitive, trimmed)
 const COL_MAP: Record<string, string> = {
@@ -117,11 +122,17 @@ export async function POST(req: Request) {
         continue
       }
 
-      // Transaksi stock: deviceNumber otomatis WSL-000039232
-      const deviceNumber = rawCategory === "S" && !rawDevice ? "WSL-000039232" : rawDevice
+      // Transaksi stock: deviceNumber otomatis ke bucket stok generik
+      const deviceNumber = rawCategory === "S" && !rawDevice ? SYSTEM_STOCK_DEVICE : rawDevice
 
-      // Pastikan unit ada jika deviceNumber diisi
-      if (deviceNumber) {
+      // Pastikan unit ada dan milik customer yang sama (kecuali bucket stok generik)
+      if (deviceNumber && deviceNumber !== SYSTEM_STOCK_DEVICE) {
+        const error = await validateUnitOwnership(deviceNumber, resolvedAccount)
+        if (error) {
+          errors.push({ row: rowNum, message: error })
+          continue
+        }
+      } else if (deviceNumber === SYSTEM_STOCK_DEVICE) {
         const unit = await prisma.unit.findUnique({ where: { deviceNumber } })
         if (!unit) {
           errors.push({ row: rowNum, message: `Device Number "${deviceNumber}" tidak ditemukan di master unit` })

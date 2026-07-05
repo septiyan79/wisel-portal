@@ -6,7 +6,12 @@ export async function GET() {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+  const where = session.user.role === "customer"
+    ? { customerAccount: session.user.customerAccount }
+    : {}
+
   const units = await prisma.unit.findMany({
+    where,
     orderBy: { deviceNumber: "asc" },
     select: {
       id: true,
@@ -31,10 +36,18 @@ export async function POST(req: Request) {
   if (!deviceNumber?.trim()) {
     return NextResponse.json({ error: "Device Number wajib diisi" }, { status: 400 })
   }
+  if (!customerAccount?.trim()) {
+    return NextResponse.json({ error: "Customer wajib diisi" }, { status: 400 })
+  }
 
   const existing = await prisma.unit.findUnique({ where: { deviceNumber: deviceNumber.trim() } })
   if (existing) {
     return NextResponse.json({ error: "Device Number sudah terdaftar" }, { status: 409 })
+  }
+
+  const customer = await prisma.customer.findUnique({ where: { customerAccount: customerAccount.trim() } })
+  if (!customer) {
+    return NextResponse.json({ error: "Customer tidak ditemukan" }, { status: 404 })
   }
 
   const unit = await prisma.unit.create({
@@ -43,7 +56,7 @@ export async function POST(req: Request) {
       serialNumber:    serialNumber?.trim()    || null,
       fleetNumber:     fleetNumber?.trim()     || null,
       model:           model?.trim()           || null,
-      customerAccount: customerAccount?.trim() || null,
+      customerAccount: customerAccount.trim(),
     },
   })
 

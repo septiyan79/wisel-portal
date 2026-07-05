@@ -14,6 +14,7 @@ export type UnitRow = {
   fleetNumber: string | null
   model: string | null
   createdAt: string
+  customerAccount: string
   customerName: string | null
 }
 
@@ -50,10 +51,6 @@ function UnitFormModal({
 }) {
   const isEdit = !!initial
 
-  const initialCustomerAccount = initial
-    ? (customers.find((c) => c.customerName === initial.customerName)?.customerAccount ?? "")
-    : ""
-
   const [form, setForm] = useState<UnitForm>(
     initial
       ? {
@@ -61,9 +58,9 @@ function UnitFormModal({
           serialNumber:    initial.serialNumber ?? "",
           fleetNumber:     initial.fleetNumber  ?? "",
           model:           initial.model        ?? "",
-          customerAccount: initialCustomerAccount,
+          customerAccount: initial.customerAccount,
         }
-      : { ...EMPTY_FORM }
+      : { ...EMPTY_FORM, customerAccount: customers[0]?.customerAccount ?? "" }
   )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -80,10 +77,10 @@ function UnitFormModal({
 
     const payload = {
       deviceNumber:    form.deviceNumber,
-      serialNumber:    form.serialNumber    || null,
-      fleetNumber:     form.fleetNumber     || null,
-      model:           form.model           || null,
-      customerAccount: form.customerAccount || null,
+      serialNumber:    form.serialNumber || null,
+      fleetNumber:     form.fleetNumber  || null,
+      model:           form.model        || null,
+      customerAccount: form.customerAccount,
     }
 
     const url    = isEdit ? `/api/units/${initial!.id}` : "/api/units"
@@ -148,13 +145,15 @@ function UnitFormModal({
               </div>
             ))}
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Customer</label>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">
+                Customer <span className="text-red-500">*</span>
+              </label>
               <select
                 value={form.customerAccount}
                 onChange={(e) => setForm((prev) => ({ ...prev, customerAccount: e.target.value }))}
+                required
                 className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#367C2B] focus:border-transparent bg-white"
               >
-                <option value="">— None / Not assigned —</option>
                 {customers.map((c) => (
                   <option key={c.customerAccount} value={c.customerAccount}>
                     {c.customerName}

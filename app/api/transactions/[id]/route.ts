@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { exportToSheets } from "@/lib/gsheets"
+import { validateUnitOwnership } from "@/lib/unit-validation"
 
 async function getManualTransaction(id: string, customerAccount: string, role: string) {
   const tx = await prisma.transaction.findUnique({ where: { id } })
@@ -24,6 +25,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     soNumber, quotation, poNumber, partNumber, axPartNumber, partName,
     qty, category, invoiceDate, packingSlipDate, unitPrice, totalPrice, deviceNumber, check,
   } = body
+
+  if (deviceNumber && tx.customerAccount) {
+    const error = await validateUnitOwnership(String(deviceNumber).trim(), tx.customerAccount)
+    if (error) return NextResponse.json({ error }, { status: 400 })
+  }
 
   const updated = await prisma.transaction.update({
     where: { id },

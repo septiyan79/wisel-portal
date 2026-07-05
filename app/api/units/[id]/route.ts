@@ -20,11 +20,19 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (!deviceNumber?.trim()) {
     return NextResponse.json({ error: "Device Number wajib diisi" }, { status: 400 })
   }
+  if (!customerAccount?.trim()) {
+    return NextResponse.json({ error: "Customer wajib diisi" }, { status: 400 })
+  }
 
   // Cek duplikasi deviceNumber jika diubah
   if (deviceNumber.trim() !== unit.deviceNumber) {
     const conflict = await prisma.unit.findUnique({ where: { deviceNumber: deviceNumber.trim() } })
     if (conflict) return NextResponse.json({ error: "Device Number sudah digunakan" }, { status: 409 })
+  }
+
+  const customer = await prisma.customer.findUnique({ where: { customerAccount: customerAccount.trim() } })
+  if (!customer) {
+    return NextResponse.json({ error: "Customer tidak ditemukan" }, { status: 404 })
   }
 
   const updated = await prisma.unit.update({
@@ -34,7 +42,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       serialNumber:    serialNumber?.trim()    || null,
       fleetNumber:     fleetNumber?.trim()     || null,
       model:           model?.trim()           || null,
-      customerAccount: customerAccount?.trim() || null,
+      customerAccount: customerAccount.trim(),
     },
   })
 

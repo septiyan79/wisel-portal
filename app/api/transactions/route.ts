@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { exportToSheets } from "@/lib/gsheets"
+import { validateUnitOwnership } from "@/lib/unit-validation"
 
 export async function GET() {
   const session = await auth()
@@ -46,18 +47,28 @@ export async function POST(req: Request) {
   // Support single object or array of objects
   const items: typeof body[] = Array.isArray(body) ? body : [body]
 
+  // Resolve customerAccount per item, then validate device ownership before writing anything
+  const resolved = items.map((item) => ({
+    item,
+    resolvedAccount:
+      session.user.role !== "customer" && item.customerAccount
+        ? item.customerAccount
+        : session.user.customerAccount,
+  }))
+
+  for (const { item, resolvedAccount } of resolved) {
+    if (item.deviceNumber) {
+      const error = await validateUnitOwnership(String(item.deviceNumber).trim(), resolvedAccount)
+      if (error) return NextResponse.json({ error }, { status: 400 })
+    }
+  }
+
   const results = []
-  for (const item of items) {
+  for (const { item, resolvedAccount } of resolved) {
     const {
       soNumber, quotation, poNumber, partNumber, axPartNumber, partName,
-      qty, category, invoiceDate, packingSlipDate, unitPrice, totalPrice, deviceNumber, customerAccount, check,
+      qty, category, invoiceDate, packingSlipDate, unitPrice, totalPrice, deviceNumber, check,
     } = item
-
-    // Admin boleh pilih customer, customer hanya bisa atas nama diri sendiri
-    const resolvedAccount =
-      session.user.role !== "customer" && customerAccount
-        ? customerAccount
-        : session.user.customerAccount
 
     const transaction = await prisma.transaction.create({
       data: {

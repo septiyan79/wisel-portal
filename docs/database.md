@@ -31,8 +31,8 @@ Login identity is `customerAccount`, not email. `role` is free-text; convention 
 The "tenant" — everything scoped-by-customer joins through `customerAccount`, not `Customer.id`.
 
 ### `Unit`
-`id, deviceNumber (unique), serialNumber? (unique), fleetNumber?, model?, customerAccount? (FK→Customer, nullable), transactions[], stockAssignments[], createdAt, updatedAt`
-Represents a physical machine/device. `customerAccount` is nullable — units can be unowned (e.g. the `"WSL-000039232"` stock placeholder has no customer). Reads via `/api/units` are **not** customer-scoped — any authenticated user sees the full unit master list regardless of role.
+`id, deviceNumber (unique), serialNumber? (unique), fleetNumber?, model?, customerAccount (FK→Customer, required since 2026-07-05), transactions[], stockAssignments[], createdAt, updatedAt`
+Represents a physical machine/device. **Every unit must belong to a customer** (`customerAccount` is non-nullable — migration `20260705000000_make_unit_customer_account_required`; all 145 pre-existing rows were backfilled to a single known owner before the constraint was added). A unit can be reassigned to a different customer at any time via `PATCH /api/units/[id]` (admin-only) or by re-importing `/api/units/import` with a new `Customer Account` column value for the same `deviceNumber` — reassignment does **not** retroactively change historical `Transaction`/`StockAssignment` rows, since those carry their own independent `customerAccount` (see `Transaction` below). `GET /api/units` is now scoped: `role === "customer"` sees only their own units; other roles see all.
 
 ### `Transaction`
 `id, externalId? (unique), source, isDeleted (default false), deletedAt?, soNumber?, quotation?, poNumber?, partNumber?, axPartNumber?, partName?, qty?, category?, invoiceDate?, packingSlipDate?, unitPrice?, totalPrice?, check?, customerAccount? (FK), deviceNumber? (FK→Unit), stockAssignments[], createdAt, updatedAt`
@@ -62,6 +62,7 @@ Written on every `/api/sync` call (success or failure) — the only audit trail 
 1. `20260403160146_add_customer_account` — introduced `customerAccount` as the tenant key.
 2. `20260411000000_add_model_category_rename_invoicedate` — added `Unit.model`, `Transaction.category`, renamed a date field to `invoiceDate`.
 3. `20260425000000_add_packing_slip_date_to_transaction` — added `packingSlipDate` (now the primary date used for filtering/sorting in most transaction views, distinct from `invoiceDate`).
+4. `20260705000000_make_unit_customer_account_required` — made `Unit.customerAccount` `NOT NULL` after backfilling all existing rows. Applied via `prisma db push` + `prisma migrate resolve --applied` (not a clean `prisma migrate dev` run — the shadow-database replay of migration #2 fails against this DB's actual history; see [known-issues.md](known-issues.md) if you need to run `migrate dev` again).
 
 ## Seed data (`prisma/seed.ts`)
 

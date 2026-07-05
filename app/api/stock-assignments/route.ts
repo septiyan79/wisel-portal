@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { exportToSheets } from "@/lib/gsheets"
+import { validateUnitOwnership } from "@/lib/unit-validation"
 
 export async function GET(req: Request) {
   const session = await auth()
@@ -67,6 +68,13 @@ export async function POST(req: Request) {
     transaction.customerAccount !== session.user.customerAccount
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  if (transaction.customerAccount) {
+    const ownershipError = await validateUnitOwnership(targetDeviceNumber, transaction.customerAccount)
+    if (ownershipError) {
+      return NextResponse.json({ error: ownershipError }, { status: 400 })
+    }
   }
 
   const assignedQty = transaction.stockAssignments.reduce((sum, a) => sum + a.qty, 0)
