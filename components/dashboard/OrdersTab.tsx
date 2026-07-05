@@ -56,7 +56,7 @@ function fmtDate(iso: string | null | undefined) {
   })
 }
 
-type SortCol = "soNumber" | "partName" | "category" | "qty" | "totalPrice" | "packingSlipDate" | "fleetNumber"
+type SortCol = "soNumber" | "partName" | "category" | "qty" | "totalPrice" | "packingSlipDate" | "fleetNumber" | "customerAccount"
 
 export function OrdersTab({ transactions, role }: OrdersTabProps) {
   const router = useRouter()
@@ -72,6 +72,7 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
   const [page, setPage]             = useState(1)
   const [pageSize, setPageSize]     = useState(10)
   const [customers, setCustomers]   = useState<CustomerOption[]>([])
+  const [customerFilter, setCustomerFilter] = useState("")
   const { sortCol, sortDir, toggleSort, sortRows } = useSortableTable<SortCol>()
 
   useEffect(() => { setPage(1) }, [sortCol, sortDir])
@@ -84,6 +85,10 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
         .catch(() => {})
     }
   }, [role])
+
+  function customerLabel(account: string | null) {
+    return customers.find((c) => c.customerAccount === account)?.customerName ?? account ?? "—"
+  }
 
   const filtered = transactions.filter((t) => {
     if (search) {
@@ -101,6 +106,7 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
     if (dateTo && t.invoiceDate) {
       if (t.invoiceDate.slice(0, 10) > dateTo) return false
     }
+    if (customerFilter && t.customerAccount !== customerFilter) return false
     return true
   })
 
@@ -112,6 +118,7 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
     totalPrice:      (a, b) => (a.totalPrice ?? 0) - (b.totalPrice ?? 0),
     packingSlipDate: (a, b) => (a.packingSlipDate ?? "").localeCompare(b.packingSlipDate ?? ""),
     fleetNumber:     (a, b) => (a.fleetNumber ?? a.deviceNumber ?? "").localeCompare(b.fleetNumber ?? b.deviceNumber ?? ""),
+    customerAccount: (a, b) => customerLabel(a.customerAccount).localeCompare(customerLabel(b.customerAccount)),
   })
 
   const paginated = sorted.slice((page - 1) * pageSize, page * pageSize)
@@ -173,6 +180,20 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
           onChange={(e) => { setSearch(e.target.value); setPage(1) }}
           className="flex-1 min-w-48 sm:max-w-72 px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#367C2B] bg-white"
         />
+        {role !== "customer" && customers.length > 0 && (
+          <select
+            value={customerFilter}
+            onChange={(e) => { setCustomerFilter(e.target.value); setPage(1) }}
+            className="px-3 py-2 text-sm border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#367C2B] bg-white shrink-0"
+          >
+            <option value="">All Customers</option>
+            {customers.map((c) => (
+              <option key={c.customerAccount} value={c.customerAccount}>
+                {c.customerName}
+              </option>
+            ))}
+          </select>
+        )}
         <div className="flex items-center gap-2 shrink-0">
           <input
             type="date"
@@ -243,6 +264,9 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
                   <p className="text-sm font-semibold text-gray-900 mt-0.5 leading-snug">
                     {t.partName ?? t.partNumber ?? "—"}
                   </p>
+                  {role !== "customer" && (
+                    <p className="text-xs text-gray-400 mt-0.5">{customerLabel(t.customerAccount)}</p>
+                  )}
                 </div>
                 <span className="text-xs text-gray-400 shrink-0">{fmtDate(t.invoiceDate)}</span>
               </div>
@@ -292,6 +316,9 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
                   {(
                     [
                       { col: "soNumber",        label: "SO Number",        cls: "whitespace-nowrap" },
+                      ...(role !== "customer"
+                        ? [{ col: "customerAccount" as SortCol, label: "Customer", cls: "hidden md:table-cell" }]
+                        : []),
                       { col: "partName",         label: "Part",             cls: "" },
                       { col: "category",         label: "Category",         cls: "hidden sm:table-cell" },
                       { col: "qty",              label: "Qty",              cls: "" },
@@ -330,6 +357,11 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
                         </span>
                       )}
                     </td>
+                    {role !== "customer" && (
+                      <td className="px-5 py-4 text-xs text-gray-600 hidden md:table-cell truncate max-w-40">
+                        {customerLabel(t.customerAccount)}
+                      </td>
+                    )}
                     <td className="px-5 py-4 max-w-48">
                       <p className="text-sm font-semibold text-gray-900 truncate">{t.partName ?? "—"}</p>
                       {t.partNumber && (
