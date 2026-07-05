@@ -9,7 +9,7 @@ export default async function PartDetailPage({ params }: { params: Promise<{ par
   const { part: encodedPart } = await params
   const partNumber = decodeURIComponent(encodedPart)
   const session = await auth()
-  const isCustomer = session!.user.role === "customer"
+  const isCustomer = session!.user.role !== "admin"
   const customerFilter = isCustomer ? { customerAccount: session!.user.customerAccount } : {}
 
   const partFilter =

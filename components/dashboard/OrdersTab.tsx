@@ -78,7 +78,7 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
   useEffect(() => { setPage(1) }, [sortCol, sortDir])
 
   useEffect(() => {
-    if (role !== "customer") {
+    if (role === "admin") {
       fetch("/api/customers")
         .then((r) => r.json())
         .then((d: CustomerOption[]) => setCustomers(d))
@@ -180,7 +180,7 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
           onChange={(e) => { setSearch(e.target.value); setPage(1) }}
           className="flex-1 min-w-48 sm:max-w-72 px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#367C2B] bg-white"
         />
-        {role !== "customer" && customers.length > 0 && (
+        {role === "admin" && customers.length > 0 && (
           <select
             value={customerFilter}
             onChange={(e) => { setCustomerFilter(e.target.value); setPage(1) }}
@@ -264,7 +264,7 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
                   <p className="text-sm font-semibold text-gray-900 mt-0.5 leading-snug">
                     {t.partName ?? t.partNumber ?? "—"}
                   </p>
-                  {role !== "customer" && (
+                  {role === "admin" && (
                     <p className="text-xs text-gray-400 mt-0.5">{customerLabel(t.customerAccount)}</p>
                   )}
                 </div>
@@ -316,7 +316,7 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
                   {(
                     [
                       { col: "soNumber",        label: "SO Number",        cls: "whitespace-nowrap" },
-                      ...(role !== "customer"
+                      ...(role === "admin"
                         ? [{ col: "customerAccount" as SortCol, label: "Customer", cls: "hidden md:table-cell" }]
                         : []),
                       { col: "partName",         label: "Part",             cls: "" },
@@ -357,7 +357,7 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
                         </span>
                       )}
                     </td>
-                    {role !== "customer" && (
+                    {role === "admin" && (
                       <td className="px-5 py-4 text-xs text-gray-600 hidden md:table-cell truncate max-w-40">
                         {customerLabel(t.customerAccount)}
                       </td>

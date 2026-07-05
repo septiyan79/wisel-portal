@@ -14,9 +14,18 @@ async function main() {
   })
 
   await prisma.user.upsert({
-    where: { customerAccount: "W0001" },
+    where: { username: "W0001" },
     update: {},
-    create: { customerAccount: "W0001", password: hashed, role: "customer" },
+    create: { username: "W0001", customerAccount: "W0001", password: hashed, role: "customer" },
+  })
+
+  // ── Akun tambahan (staff) untuk customer W0001 ────────────────
+  // Contoh: satu Customer/tenant bisa punya lebih dari satu akun login.
+  // customerAccount sama ("W0001") tapi username unik & role "customer_user".
+  await prisma.user.upsert({
+    where: { username: "W0001-staff" },
+    update: {},
+    create: { username: "W0001-staff", customerAccount: "W0001", password: hashed, role: "customer_user" },
   })
 
   // ── Customer account 2 ───────────────────────────────────────
@@ -27,9 +36,9 @@ async function main() {
   })
 
   await prisma.user.upsert({
-    where: { customerAccount: "W0002" },
+    where: { username: "W0002" },
     update: {},
-    create: { customerAccount: "W0002", password: hashed, role: "customer" },
+    create: { username: "W0002", customerAccount: "W0002", password: hashed, role: "customer" },
   })
 
   // ── Admin account ─────────────────────────────────────────────
@@ -41,9 +50,9 @@ async function main() {
   })
 
   await prisma.user.upsert({
-    where: { customerAccount: "ADMIN" },
+    where: { username: "ADMIN" },
     update: {},
-    create: { customerAccount: "ADMIN", password: hashed, role: "admin" },
+    create: { username: "ADMIN", customerAccount: "ADMIN", password: hashed, role: "admin" },
   })
 
   // ── Unit STOCK placeholder ────────────────────────────────────
@@ -54,10 +63,11 @@ async function main() {
   })
 
   console.log("Seed done:")
-  console.log("  customer → W0001 / password123")
-  console.log("  customer → W0002 / password123")
-  console.log("  admin    → ADMIN / password123")
-  console.log("  unit     → STOCK (Stock Gudang)")
+  console.log("  customer      → W0001 / password123")
+  console.log("  customer_user → W0001-staff / password123 (akun tambahan untuk W0001)")
+  console.log("  customer      → W0002 / password123")
+  console.log("  admin         → ADMIN / password123")
+  console.log("  unit          → STOCK (Stock Gudang)")
 }
 
 main()

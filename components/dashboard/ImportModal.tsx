@@ -98,7 +98,7 @@ function downloadTemplate(type: ImportType) {
 // ── Component ───────────────────────────────────────────────────
 
 export function ImportModal({ type, role, customers = [], onClose, onImported }: ImportModalProps) {
-  const isAdmin = role !== "customer"
+  const isAdmin = role === "admin"
   const fileRef = useRef<HTMLInputElement>(null)
 
   const [file, setFile] = useState<File | null>(null)

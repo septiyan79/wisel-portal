@@ -17,7 +17,7 @@ interface DashboardNavbarProps {
 
 export function DashboardNavbar({ customerAccount, customerName, role }: DashboardNavbarProps) {
   const pathname = usePathname()
-  const navItems = role === "customer" ? NAV_ITEMS : ADMIN_NAV_ITEMS
+  const navItems = role !== "admin" ? NAV_ITEMS : ADMIN_NAV_ITEMS
   const [confirmLogout, setConfirmLogout] = useState(false)
   const [navSlideOpen, setNavSlideOpen] = useState(false)
   const [secondarySlideOpen, setSecondarySlideOpen] = useState(false)

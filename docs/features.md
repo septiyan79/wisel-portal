@@ -6,7 +6,7 @@
 |---|---|---|
 | `/` | `app/page.tsx` | Server component, body is just `redirect("/login")` — not the marketing page. |
 | `/landing` | `app/landing/page.tsx` | The actual public marketing homepage. Static/presentational, no auth, no Prisma. Composes `Topbar → Header → Hero → Categories → Banner → Careers → Resources → StoreLocation → Newsletter → Footer` from `components/landing/*`, all driven by static copy in `data/home.ts` / `data/footer.ts`. Login page links back here ("Back to Home"). |
-| `/login` | `app/(auth)/login/page.tsx` | Client component. Calls NextAuth `signIn("credentials", { customerAccount, password, redirect: false })` then `router.push("/dashboard")`. No Prisma (delegated to `lib/auth.ts`). |
+| `/login` | `app/(auth)/login/page.tsx` | Client component. Calls NextAuth `signIn("credentials", { username, password, redirect: false })` then `router.push("/dashboard")`. No Prisma (delegated to `lib/auth.ts`). Field was renamed from `customerAccount` on 2026-07-05 — existing accounts' `username` was backfilled to their old `customerAccount` value, so old credentials still work. |
 
 `app/layout.tsx` is the root layout for both trees (fonts, metadata) — no auth logic.
 
@@ -21,18 +21,19 @@
 | `/dashboard` | none | no Prisma calls at all | static Power BI report iframe |
 | `/profile` | none | none (own session data only) | `ProfileTab` |
 | `/docs` | none (content wording varies by role) | none | `ApiDocsPanel` |
-| `/api-keys` | **admin-only** (customer → `/dashboard`) | unscoped (`ApiKey.findMany` across all customers) | `ApiKeysTab` |
-| `/units` | **admin-only** (customer → `/transactions`) | unscoped (`Unit.findMany` across all customers) | `UnitsTab` |
-| `/users` | **admin-only, strict** (`role !== "admin"` → `/dashboard`) | unscoped | `UsersTab` |
+| `/api-keys` | **admin-only** (non-admin → `/dashboard`) | unscoped (`ApiKey.findMany` across all customers) | `ApiKeysTab` |
+| `/customers` | **admin-only** (non-admin → `/dashboard`) | unscoped (`Customer.findMany` with `_count` of users/units/transactions/apiKeys) | `CustomersTab` |
+| `/units` | **admin-only** (non-admin → `/transactions`) | unscoped (`Unit.findMany` across all customers) | `UnitsTab` |
+| `/users` | **admin-only** (`role !== "admin"` → `/dashboard`) | unscoped | `UsersTab` |
 | `/transactions` | none | — | redirects to `/transactions/summary` |
-| `/transactions/summary` | none (data scoped instead) | customer → own `customerAccount`; excludes `category: "S"` (shown via assignments instead) | `TransactionKpiCards` + `OrdersTab` |
-| `/transactions/stock` | none (data scoped) | customer → own `customerAccount`; `category: "S"` only | `StockTab` |
-| `/transactions/by-fleet` | none (data scoped) | customer → own; excludes `deviceNumber: "STOCK"` | `TransactionKpiCards` (with extra "Total Fleet" card) + `FleetTransactionTable` |
-| `/transactions/by-fleet/[fleet]` | none (data scoped) | customer → own; `"—"` URL param = null-device sentinel | `FleetDetailTable`; `notFound()` if both queries empty (acts as implicit 404-as-403 for cross-customer access) |
-| `/transactions/by-part` | none (data scoped) | customer → own | `TransactionKpiCards` + `PartTransactionTable` |
-| `/transactions/by-part/[part]` | none (data scoped) | customer → own; matches `partNumber` OR `axPartNumber` | `PartDetailTable`; same implicit-404 pattern |
+| `/transactions/summary` | none (data scoped instead) | non-admin → own `customerAccount`; excludes `category: "S"` (shown via assignments instead) | `TransactionKpiCards` + `OrdersTab` |
+| `/transactions/stock` | none (data scoped) | non-admin → own `customerAccount`; `category: "S"` only | `StockTab` |
+| `/transactions/by-fleet` | none (data scoped) | non-admin → own; excludes `deviceNumber: "STOCK"` | `TransactionKpiCards` (with extra "Total Fleet" card) + `FleetTransactionTable` |
+| `/transactions/by-fleet/[fleet]` | none (data scoped) | non-admin → own; `"—"` URL param = null-device sentinel | `FleetDetailTable`; `notFound()` if both queries empty (acts as implicit 404-as-403 for cross-customer access) |
+| `/transactions/by-part` | none (data scoped) | non-admin → own | `TransactionKpiCards` + `PartTransactionTable` |
+| `/transactions/by-part/[part]` | none (data scoped) | non-admin → own; matches `partNumber` OR `axPartNumber` | `PartDetailTable`; same implicit-404 pattern |
 
-**Two role-gating strategies** — see [architecture.md](architecture.md#role-scoping-conventions) for the general rule. The consistent idiom for scoped pages: `session.user.role === "customer" ? { ...filter, customerAccount: session.user.customerAccount } : { ...filter }`.
+**Two role-gating strategies** — see [architecture.md](architecture.md#role-scoping-conventions) for the general rule. Both `"customer"` and `"customer_user"` are treated identically ("non-admin") by every check. The consistent idiom for scoped pages: `session.user.role !== "admin" ? { ...filter, customerAccount: session.user.customerAccount } : { ...filter }`.
 
 **Shared server component `TransactionKpiCards`** (props: `role`, `customerAccount`, optional `extraCard`) runs its own three independent Prisma queries on every page that includes it — each hosting page also runs overlapping queries for its own table, so KPI totals are computed redundantly (not shared) per page render.
 

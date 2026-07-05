@@ -5,7 +5,7 @@ import { UnitsTab } from "@/components/dashboard/UnitsTab"
 
 export default async function UnitsPage() {
   const session = await auth()
-  if (session!.user.role === "customer") redirect("/transactions")
+  if (session!.user.role !== "admin") redirect("/transactions")
 
   const [raw, customers] = await Promise.all([
     prisma.unit.findMany({

@@ -15,12 +15,12 @@ export default async function TransactionSummaryPage() {
   const session = await auth()
 
   const txWhere =
-    session!.user.role === "customer"
+    session!.user.role !== "admin"
       ? { isDeleted: false, customerAccount: session!.user.customerAccount, NOT: { category: "S" } }
       : { isDeleted: false, NOT: { category: "S" } }
 
   const assignWhere =
-    session!.user.role === "customer"
+    session!.user.role !== "admin"
       ? { stockTransaction: { isDeleted: false, customerAccount: session!.user.customerAccount } }
       : { stockTransaction: { isDeleted: false } }
 

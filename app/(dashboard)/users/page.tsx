@@ -11,6 +11,7 @@ export default async function UsersPage() {
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
+      username: true,
       customerAccount: true,
       role: true,
       createdAt: true,
@@ -20,6 +21,7 @@ export default async function UsersPage() {
 
   const users = raw.map((u) => ({
     id: u.id,
+    username: u.username,
     customerAccount: u.customerAccount,
     customerName: u.customer?.customerName ?? "",
     role: u.role,

@@ -5,7 +5,7 @@ import { TransactionKpiCards } from "@/components/dashboard/TransactionKpiCards"
 
 export default async function TransactionByPartPage() {
   const session = await auth()
-  const isCustomer = session!.user.role === "customer"
+  const isCustomer = session!.user.role !== "admin"
   const customerFilter = isCustomer ? { customerAccount: session!.user.customerAccount } : {}
 
   const [raw, rawStock] = await Promise.all([

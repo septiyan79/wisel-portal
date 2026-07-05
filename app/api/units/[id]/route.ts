@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db"
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  if (session.user.role === "customer") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  if (session.user.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { id } = await params
   const unit = await prisma.unit.findUnique({ where: { id } })
@@ -52,7 +52,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  if (session.user.role === "customer") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  if (session.user.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { id } = await params
   const unit = await prisma.unit.findUnique({

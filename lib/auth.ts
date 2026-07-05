@@ -7,14 +7,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Credentials({
       credentials: {
-        customerAccount: { label: "Customer Account", type: "text" },
+        username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.customerAccount || !credentials?.password) return null
+        if (!credentials?.username || !credentials?.password) return null
 
         const user = await prisma.user.findUnique({
-          where: { customerAccount: credentials.customerAccount as string },
+          where: { username: credentials.username as string },
         })
 
         if (!user) return null
@@ -46,11 +46,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         const u = user as {
           id: string
+          username: string
           role: string
           customerAccount: string
           customerName?: string
         }
         token.id = u.id
+        token.username = u.username
         token.role = u.role
         token.customerAccount = u.customerAccount
         token.customerName = u.customerName ?? u.customerAccount
@@ -59,6 +61,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     session({ session, token }) {
       session.user.id = token.id
+      session.user.username = token.username
       session.user.role = token.role
       session.user.customerAccount = token.customerAccount
       session.user.customerName = token.customerName ?? token.customerAccount ?? ""

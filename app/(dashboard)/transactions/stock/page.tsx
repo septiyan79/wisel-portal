@@ -6,7 +6,7 @@ export default async function StockPage() {
   const session = await auth()
 
   const where =
-    session!.user.role === "customer"
+    session!.user.role !== "admin"
       ? { isDeleted: false, category: "S", customerAccount: session!.user.customerAccount }
       : { isDeleted: false, category: "S" }
 

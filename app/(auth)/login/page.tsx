@@ -8,7 +8,7 @@ import { Eye, EyeOff, Leaf, ArrowLeft, Loader2 } from "lucide-react";
 export default function LoginPage() {
   const router = useRouter();
 
-  const [customerAccount, setCustomerAccount] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -21,13 +21,13 @@ export default function LoginPage() {
     setLoading(true)
 
     const result = await signIn("credentials", {
-      customerAccount,
+      username,
       password,
       redirect: false,
     })
 
     if (result?.error) {
-      setError("Invalid account number or password.")
+      setError("Invalid username or password.")
       setLoading(false)
     } else {
       router.push("/dashboard")
@@ -77,15 +77,15 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* Customer Account */}
+              {/* Username */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Account Number
+                  Username
                 </label>
                 <input
                   type="text"
-                  value={customerAccount}
-                  onChange={(e) => setCustomerAccount(e.target.value.toUpperCase().slice(0, 5))}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   placeholder="e.g. W0001"
                   required
                   className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all tracking-widest"

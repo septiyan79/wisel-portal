@@ -8,7 +8,7 @@ async function getManualTransaction(id: string, customerAccount: string, role: s
   const tx = await prisma.transaction.findUnique({ where: { id } })
   if (!tx || tx.isDeleted) return null
   if (tx.source !== "manual") return null
-  if (role === "customer" && tx.customerAccount !== customerAccount) return null
+  if (role !== "admin" && tx.customerAccount !== customerAccount) return null
   return tx
 }
 

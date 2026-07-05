@@ -5,7 +5,7 @@ import { ApiKeysTab } from "@/components/dashboard/ApiKeysTab"
 
 export default async function ApiKeysPage() {
   const session = await auth()
-  if (session!.user.role === "customer") redirect("/dashboard")
+  if (session!.user.role !== "admin") redirect("/dashboard")
 
   const [apiKeys, customers] = await Promise.all([
     prisma.apiKey.findMany({

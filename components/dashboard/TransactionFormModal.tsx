@@ -86,7 +86,7 @@ function isFormEmpty(form: FormState): boolean {
 
 export function TransactionFormModal({ initial, role, onClose, onSaved }: TransactionFormModalProps) {
   const isEdit = !!initial
-  const isAdmin = role !== "customer"
+  const isAdmin = role === "admin"
 
   const [forms, setForms] = useState<FormState[]>([{ ...EMPTY }])
   const [customerAccount, setCustomerAccount] = useState("")

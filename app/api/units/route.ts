@@ -6,7 +6,7 @@ export async function GET() {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const where = session.user.role === "customer"
+  const where = session.user.role !== "admin"
     ? { customerAccount: session.user.customerAccount }
     : {}
 
@@ -29,7 +29,7 @@ export async function GET() {
 export async function POST(req: Request) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  if (session.user.role === "customer") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  if (session.user.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { deviceNumber, serialNumber, fleetNumber, model, customerAccount } = await req.json()
 

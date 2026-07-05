@@ -16,7 +16,7 @@ interface Props {
 }
 
 export async function TransactionKpiCards({ role, customerAccount, extraCard }: Props) {
-  const customerFilter = role === "customer" && customerAccount ? { customerAccount } : {}
+  const customerFilter = role !== "admin" && customerAccount ? { customerAccount } : {}
 
   const [raw, rawAssignments, rawStock] = await Promise.all([
     prisma.transaction.findMany({

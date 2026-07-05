@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Plus, Pencil, Trash2, Users, Eye, EyeOff, Loader2, X, ShieldCheck, User } from "lucide-react"
 import { ConfirmModal } from "./ConfirmModal"
 
 export type UserRow = {
   id: string
+  username: string
   customerAccount: string
   customerName: string
   role: string
@@ -30,6 +31,14 @@ function RoleBadge({ role }: { role: string }) {
       </span>
     )
   }
+  if (role === "customer_user") {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-teal-100 text-teal-700">
+        <Users size={11} />
+        Customer (Staff)
+      </span>
+    )
+  }
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
       <User size={11} />
@@ -41,23 +50,48 @@ function RoleBadge({ role }: { role: string }) {
 function UserFormModal({
   mode,
   user,
+  existingAdminUsername,
   onClose,
   onSaved,
 }: {
   mode: "create" | "edit"
   user?: UserRow
+  existingAdminUsername?: string
   onClose: () => void
   onSaved: (row: UserRow) => void
 }) {
+  const [username, setUsername] = useState(user?.username ?? "")
   const [customerAccount, setCustomerAccount] = useState(user?.customerAccount ?? "")
   const [customerName, setCustomerName] = useState(user?.customerName ?? "")
   const [password, setPassword] = useState("")
-  const [role, setRole] = useState<"customer" | "admin">(
-    (user?.role as "customer" | "admin") ?? "customer"
+  const [role, setRole] = useState<"customer" | "customer_user" | "admin">(
+    (user?.role as "customer" | "customer_user" | "admin") ?? "customer"
   )
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [customers, setCustomers] = useState<{ customerAccount: string; customerName: string }[]>(
+    user ? [{ customerAccount: user.customerAccount, customerName: user.customerName }] : []
+  )
+
+  const isCreate = mode === "create"
+
+  useEffect(() => {
+    fetch("/api/customers")
+      .then((r) => r.json())
+      .then((data: { customerAccount: string; customerName: string }[]) => {
+        setCustomers(data)
+        if (isCreate) {
+          const match = data.find((c) => c.customerAccount === customerAccount) ?? data[0]
+          if (match) {
+            setCustomerAccount(match.customerAccount)
+            setCustomerName(match.customerName)
+          }
+        }
+      })
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -69,10 +103,10 @@ function UserFormModal({
         res = await fetch("/api/admin/users", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ customerAccount, customerName, password, role }),
+          body: JSON.stringify({ username, customerAccount, password, role }),
         })
       } else {
-        const body: Record<string, string> = { customerName, role }
+        const body: Record<string, string> = { role }
         if (password) body.password = password
         res = await fetch(`/api/admin/users/${user!.id}`, {
           method: "PATCH",
@@ -90,8 +124,6 @@ function UserFormModal({
     }
   }
 
-  const isCreate = mode === "create"
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
@@ -102,12 +134,12 @@ function UserFormModal({
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Account ID</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Username (login)</label>
             <input
               type="text"
-              value={customerAccount}
-              onChange={(e) => setCustomerAccount(e.target.value.toUpperCase())}
-              placeholder="e.g. W0001"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="e.g. budi.staff"
               required
               disabled={!isCreate}
               className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none disabled:bg-gray-50 disabled:text-gray-400"
@@ -115,15 +147,47 @@ function UserFormModal({
           </div>
 
           <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Account ID (tenant)</label>
+            <select
+              value={customerAccount}
+              onChange={(e) => {
+                const selected = customers.find((c) => c.customerAccount === e.target.value)
+                setCustomerAccount(e.target.value)
+                setCustomerName(selected?.customerName ?? "")
+              }}
+              required
+              disabled={!isCreate}
+              className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none bg-white disabled:bg-gray-50 disabled:text-gray-400"
+            >
+              {customers.length === 0 && <option value="">No customers yet</option>}
+              {customers.map((c) => (
+                <option key={c.customerAccount} value={c.customerAccount}>
+                  {c.customerAccount} — {c.customerName}
+                </option>
+              ))}
+            </select>
+            {isCreate && customers.length === 0 ? (
+              <p className="text-[11px] text-amber-600 mt-1">
+                No customers exist yet — create one on the Customers page first.
+              </p>
+            ) : isCreate && (
+              <p className="text-[11px] text-gray-400 mt-1">
+                Pick an existing Account ID to add another login for that same customer.
+              </p>
+            )}
+          </div>
+
+          <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1.5">Company Name</label>
             <input
               type="text"
               value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="e.g. PT Agro Nusantara"
-              required
-              className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+              disabled
+              className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg outline-none bg-gray-50 text-gray-400"
             />
+            <p className="text-[11px] text-gray-400 mt-1">
+              Auto-filled from the selected Account ID — edit it on the Customers page.
+            </p>
           </div>
 
           <div>
@@ -152,32 +216,55 @@ function UserFormModal({
 
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1.5">Role</label>
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => setRole("customer")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold border transition-colors ${
                   role === "customer"
                     ? "bg-blue-50 border-blue-300 text-blue-700"
                     : "border-gray-200 text-gray-500 hover:bg-gray-50"
                 }`}
               >
-                <User size={14} />
+                <User size={13} />
                 Customer
               </button>
               <button
                 type="button"
+                onClick={() => setRole("customer_user")}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold border transition-colors ${
+                  role === "customer_user"
+                    ? "bg-teal-50 border-teal-300 text-teal-700"
+                    : "border-gray-200 text-gray-500 hover:bg-gray-50"
+                }`}
+              >
+                <Users size={13} />
+                Staff
+              </button>
+              <button
+                type="button"
                 onClick={() => setRole("admin")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
+                disabled={!!existingAdminUsername}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                   role === "admin"
                     ? "bg-purple-50 border-purple-300 text-purple-700"
                     : "border-gray-200 text-gray-500 hover:bg-gray-50"
                 }`}
               >
-                <ShieldCheck size={14} />
+                <ShieldCheck size={13} />
                 Admin
               </button>
             </div>
+            {role === "customer_user" && (
+              <p className="text-[11px] text-gray-400 mt-1">
+                Same data access as Customer — an additional login for the same Account ID.
+              </p>
+            )}
+            {existingAdminUsername && (
+              <p className="text-[11px] text-gray-400 mt-1">
+                Only one admin account is allowed — that role is already used by &quot;{existingAdminUsername}&quot;.
+              </p>
+            )}
           </div>
 
           {error && <p className="text-xs text-red-600">{error}</p>}
@@ -193,7 +280,7 @@ function UserFormModal({
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (isCreate && customers.length === 0)}
               className="flex-1 py-2.5 text-sm font-bold text-white bg-[#367C2B] hover:bg-[#2d6423] rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
             >
               {loading && <Loader2 size={14} className="animate-spin" />}
@@ -216,8 +303,11 @@ export function UsersTab({ initialUsers }: UsersTabProps) {
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState("")
 
+  const existingAdmin = users.find((u) => u.role === "admin")
+
   const filtered = users.filter(
     (u) =>
+      u.username.toLowerCase().includes(search.toLowerCase()) ||
       u.customerAccount.toLowerCase().includes(search.toLowerCase()) ||
       u.customerName.toLowerCase().includes(search.toLowerCase()) ||
       u.role.toLowerCase().includes(search.toLowerCase())
@@ -285,6 +375,7 @@ export function UsersTab({ initialUsers }: UsersTabProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100">
+                  <th className="text-left text-xs font-semibold text-gray-500 pb-3 pr-4">Username</th>
                   <th className="text-left text-xs font-semibold text-gray-500 pb-3 pr-4">Account ID</th>
                   <th className="text-left text-xs font-semibold text-gray-500 pb-3 pr-4">Company Name</th>
                   <th className="text-left text-xs font-semibold text-gray-500 pb-3 pr-4">Role</th>
@@ -295,6 +386,7 @@ export function UsersTab({ initialUsers }: UsersTabProps) {
               <tbody className="divide-y divide-gray-50">
                 {filtered.map((u) => (
                   <tr key={u.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="py-3 pr-4 text-xs font-semibold text-gray-700">{u.username}</td>
                     <td className="py-3 pr-4">
                       <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded font-semibold text-gray-700">
                         {u.customerAccount}
@@ -314,13 +406,15 @@ export function UsersTab({ initialUsers }: UsersTabProps) {
                         >
                           <Pencil size={14} />
                         </button>
-                        <button
-                          onClick={() => { setDeleteError(""); setDeleteTarget(u) }}
-                          className="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
-                          title="Delete user"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {u.role !== "admin" && (
+                          <button
+                            onClick={() => { setDeleteError(""); setDeleteTarget(u) }}
+                            className="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
+                            title="Delete user"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -334,6 +428,7 @@ export function UsersTab({ initialUsers }: UsersTabProps) {
       {showForm && (
         <UserFormModal
           mode="create"
+          existingAdminUsername={existingAdmin?.username}
           onClose={() => setShowForm(false)}
           onSaved={handleCreated}
         />
@@ -343,6 +438,9 @@ export function UsersTab({ initialUsers }: UsersTabProps) {
         <UserFormModal
           mode="edit"
           user={editTarget}
+          existingAdminUsername={
+            existingAdmin && existingAdmin.id !== editTarget.id ? existingAdmin.username : undefined
+          }
           onClose={() => setEditTarget(null)}
           onSaved={handleUpdated}
         />
@@ -351,7 +449,7 @@ export function UsersTab({ initialUsers }: UsersTabProps) {
       {deleteTarget && (
         <ConfirmModal
           title="Delete User"
-          message={`Account "${deleteTarget.customerAccount}" (${deleteTarget.customerName}) will be permanently deleted. This only removes login access — transaction data is preserved.${deleteError ? `\n\nError: ${deleteError}` : ""}`}
+          message={`Login "${deleteTarget.username}" for account "${deleteTarget.customerAccount}" (${deleteTarget.customerName}) will be permanently deleted. This only removes login access — transaction data is preserved.${deleteError ? `\n\nError: ${deleteError}` : ""}`}
           confirmLabel="Delete"
           confirmVariant="danger"
           loading={deleting}

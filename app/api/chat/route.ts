@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   const groq = createGroq({ apiKey: process.env.GROQ_API_KEY! })
 
   const { role, customerAccount, customerName } = session.user
-  const scopedAccount = role === 'customer' ? customerAccount : null
+  const scopedAccount = role !== 'admin' ? customerAccount : null
 
   const systemPrompt =
     role === 'admin'

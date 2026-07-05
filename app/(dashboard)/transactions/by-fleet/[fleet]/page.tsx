@@ -11,7 +11,7 @@ export default async function FleetDetailPage({ params }: { params: Promise<{ fl
   const session = await auth()
 
   const deviceNumberFilter = fleet === "—" ? null : fleet
-  const isCustomer = session!.user.role === "customer"
+  const isCustomer = session!.user.role !== "admin"
 
   const txWhere = {
     isDeleted: false,

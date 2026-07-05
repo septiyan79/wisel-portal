@@ -7,12 +7,12 @@ export default async function TransactionByFleetPage() {
   const session = await auth()
 
   const txWhere =
-    session!.user.role === "customer"
+    session!.user.role !== "admin"
       ? { isDeleted: false, customerAccount: session!.user.customerAccount, NOT: { deviceNumber: "STOCK" } }
       : { isDeleted: false, NOT: { deviceNumber: "STOCK" } }
 
   const assignWhere =
-    session!.user.role === "customer"
+    session!.user.role !== "admin"
       ? { stockTransaction: { isDeleted: false, customerAccount: session!.user.customerAccount } }
       : { stockTransaction: { isDeleted: false } }
 

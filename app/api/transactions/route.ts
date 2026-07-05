@@ -11,7 +11,7 @@ export async function GET() {
   }
 
   const where =
-    session.user.role === "customer"
+    session.user.role !== "admin"
       ? { isDeleted: false, customerAccount: session.user.customerAccount, NOT: { category: "S" } }
       : { isDeleted: false, NOT: { category: "S" } }
 
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
   const resolved = items.map((item) => ({
     item,
     resolvedAccount:
-      session.user.role !== "customer" && item.customerAccount
+      session.user.role === "admin" && item.customerAccount
         ? item.customerAccount
         : session.user.customerAccount,
   }))

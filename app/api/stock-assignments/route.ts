@@ -22,7 +22,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Transaction not found" }, { status: 404 })
   }
   if (
-    session.user.role === "customer" &&
+    session.user.role !== "admin" &&
     transaction.customerAccount !== session.user.customerAccount
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Transaction is not a stock transaction" }, { status: 400 })
   }
   if (
-    session.user.role === "customer" &&
+    session.user.role !== "admin" &&
     transaction.customerAccount !== session.user.customerAccount
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })

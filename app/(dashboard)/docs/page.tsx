@@ -28,7 +28,7 @@ export default async function DocsPage() {
   const host = headersList.get("host") ?? "your-domain.com"
   const proto = process.env.NODE_ENV === "production" ? "https" : "http"
   const baseUrl = `${proto}://${host}`
-  const isAdmin = session?.user.role !== "customer"
+  const isAdmin = session?.user.role === "admin"
 
   return (
     <>

@@ -1,4 +1,4 @@
-import { AlertCircle, Clock, Truck, CheckCircle, XCircle, ShoppingCart, Cpu, LayoutDashboard, KeyRound, BookOpen, Users, Code2 } from "lucide-react"
+import { AlertCircle, Clock, Truck, CheckCircle, XCircle, ShoppingCart, Cpu, LayoutDashboard, KeyRound, BookOpen, Users, Code2, Building2 } from "lucide-react"
 import type { ElementType } from "react"
 
 export type StatusConfig = {
@@ -52,6 +52,7 @@ const API_CHILDREN: DashboardNavChild[] = [
 export const ADMIN_NAV_ITEMS: DashboardNavItem[] = [
   { id: "dashboard",    label: "Dashboard",   icon: LayoutDashboard, href: "/dashboard" },
   { id: "transactions", label: "Transactions", icon: ShoppingCart,   href: "/transactions", children: TRANSACTION_CHILDREN },
+  { id: "customers",    label: "Customers",   icon: Building2,       href: "/customers" },
   { id: "units",        label: "Units",       icon: Cpu,             href: "/units" },
   { id: "users",        label: "Users",       icon: Users,           href: "/users" },
   { id: "api",          label: "API",         icon: Code2,           href: "/api-keys",  children: API_CHILDREN },

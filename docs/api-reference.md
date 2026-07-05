@@ -5,17 +5,17 @@ Two auth mechanisms are used, never combined in one route: **session** (`auth()`
 ## Auth
 
 ### `app/api/auth/[...nextauth]/route.ts`
-`GET`, `POST` — direct re-export of NextAuth `handlers`. No custom code; all logic lives in `lib/auth.ts` (Credentials provider, JWT session shape `{id, role, customerAccount, customerName}`).
+`GET`, `POST` — direct re-export of NextAuth `handlers`. No custom code; all logic lives in `lib/auth.ts` (Credentials provider — login field is `username`, not `customerAccount`; JWT session shape `{id, username, role, customerAccount, customerName}`).
 
 ## Chat
 
 ### `POST /api/chat`
-Runtime: `nodejs`. Auth: session required (plain-text `401` response, not JSON, if missing). Body: `{ messages: <AI SDK message array> }` (unvalidated). Runs `generateText` against Groq `llama-3.3-70b-versatile` with 4 registered tools (`query_transactions`, `get_summary_stats`, `get_stock_info`, `search_parts`, each wrapping a `lib/chat-tools.ts` function), `stopWhen: stepCountIs(5)`. Every tool's `execute` forcibly injects the session-derived `customerAccount` (`role === 'customer' ? customerAccount : null`), overriding anything the model supplies — customers cannot escalate scope via prompt injection. Response: `{ text }` (plain `Response.json`, not `NextResponse.json` — inconsistent with the rest of the API). `GROQ_API_KEY!` non-null assertion throws at runtime if unset. No streaming, no rate limiting.
+Runtime: `nodejs`. Auth: session required (plain-text `401` response, not JSON, if missing). Body: `{ messages: <AI SDK message array> }` (unvalidated). Runs `generateText` against Groq `llama-3.3-70b-versatile` with 4 registered tools (`query_transactions`, `get_summary_stats`, `get_stock_info`, `search_parts`, each wrapping a `lib/chat-tools.ts` function), `stopWhen: stepCountIs(5)`. Every tool's `execute` forcibly injects the session-derived `customerAccount` (`role !== 'admin' ? customerAccount : null`), overriding anything the model supplies — customers (and `customer_user` accounts) cannot escalate scope via prompt injection. Response: `{ text }` (plain `Response.json`, not `NextResponse.json` — inconsistent with the rest of the API). `GROQ_API_KEY!` non-null assertion throws at runtime if unset. No streaming, no rate limiting.
 
 ## Customers
 
 ### `GET /api/customers`
-Auth: session; `role === "customer"` → 403. Returns all `{ customerAccount, customerName }` sorted by name — used for admin picker dropdowns.
+Auth: session; `role !== "admin"` → 403. Returns all `{ customerAccount, customerName }` sorted by name — used for admin picker dropdowns (`TransactionFormModal`, `ImportModal`, `OrdersTab`'s filter, and `UsersTab`'s Add/Edit User "Account ID" dropdown). Not to be confused with `/api/admin/customers` (below), which is the admin/CRUD version with per-customer counts, used only by `CustomersTab`.
 
 ### `GET /api/customer/items` *(singular — external/tenant-facing, do not confuse with `/api/customers` above)*
 Auth: **API key only** (`Bearer wsl_...`), no session path. Query params (all optional): `invoiceDateFrom`, `invoiceDateTo`, `packingSlipDateFrom`, `packingSlipDateTo` (`*To` shifted to end-of-day UTC; invalid dates silently ignored). Merges two Prisma queries — direct `Transaction` rows (excluding `category: "S"`) and `StockAssignment` rows (each priced as `stockTransaction.unitPrice * assignment.qty`, **not** the parent's stored `totalPrice`) — into one array shaped `{ type: "transaction"|"stock_assignment", id, deviceNumber, serialNumber, quotation, soNumber, poNumber, partNumber, axPartNumber, partName, qty, invoiceDate, unitPrice, totalPrice, category, notes, packingSlipDate }`, sorted by `invoiceDate` desc. `notes` is mapped from the DB's `check` column. `getCustomerFromApiKey` fire-and-forget updates `ApiKey.lastUsedAt` on every call.
@@ -23,8 +23,8 @@ Auth: **API key only** (`Bearer wsl_...`), no session path. Query params (all op
 ## Transactions
 
 ### `GET/POST /api/transactions`
-- **GET**: session required. Scoped by role (`customer` → own `customerAccount`, others → all), always excludes `category: "S"`. Returns selected fields ordered by `invoiceDate` desc.
-- **POST**: session required, no role restriction. Body: single object or array. `resolvedAccount`: admins may set an arbitrary `customerAccount`; customers are always forced to their own. **Since 2026-07-05**: if `deviceNumber` is set, validates via `lib/unit-validation.ts` `validateUnitOwnership()` that the unit exists *and* belongs to `resolvedAccount` — all items in the array are validated before any are created (400 aborts the whole request, nothing is written). Creates with `source: "manual"` hard-coded, **no `$transaction` batching** (partial failure mid-array still possible once past validation). Fires `void exportToSheets()`. Returns `201`.
+- **GET**: session required. Scoped by role (non-admin → own `customerAccount`, admin → all), always excludes `category: "S"`. Returns selected fields ordered by `invoiceDate` desc.
+- **POST**: session required, no role restriction. Body: single object or array. `resolvedAccount`: only `role === "admin"` may set an arbitrary `customerAccount`; everyone else (`customer` and `customer_user` alike) is always forced to their own. **Since 2026-07-05**: if `deviceNumber` is set, validates via `lib/unit-validation.ts` `validateUnitOwnership()` that the unit exists *and* belongs to `resolvedAccount` — all items in the array are validated before any are created (400 aborts the whole request, nothing is written). Creates with `source: "manual"` hard-coded, **no `$transaction` batching** (partial failure mid-array still possible once past validation). Fires `void exportToSheets()`. Returns `201`.
 
 ### `PATCH/DELETE /api/transactions/[id]`
 Shared ownership helper only allows mutation when `source === "manual"` AND (admin, or customer owns the row) — everything else 404s, including provider/import rows (surfaced identically to "not found").
@@ -57,8 +57,8 @@ Multipart `file` (+ optional `customerAccount`, admin-only override). Session re
 ## Units
 
 ### `GET/POST /api/units`
-- **GET**: session required. **Scoped since 2026-07-05**: `role === "customer"` → only units where `customerAccount` matches their own; any other role → full list.
-- **POST**: session + admin-only (`role === "customer"` → 403). Requires non-blank `deviceNumber` **and** non-blank `customerAccount` (400 if either missing; 404 if `customerAccount` doesn't match an existing `Customer`). Explicit pre-check for `deviceNumber` uniqueness (409 if taken) rather than relying on the DB constraint error.
+- **GET**: session required. **Scoped since 2026-07-05**: `role !== "admin"` → only units where `customerAccount` matches their own; admin → full list.
+- **POST**: session + admin-only (`role !== "admin"` → 403). Requires non-blank `deviceNumber` **and** non-blank `customerAccount` (400 if either missing; 404 if `customerAccount` doesn't match an existing `Customer`). Explicit pre-check for `deviceNumber` uniqueness (409 if taken) rather than relying on the DB constraint error.
 
 ### `PATCH/DELETE /api/units/[id]`
 Admin-only. `customerAccount` is required on PATCH too (same 400/404 validation as POST) — a unit can be reassigned to a different customer this way, but not unassigned. The hardcoded placeholder unit `"WSL-000039232"` cannot be edited or deleted (403). DELETE also checks `_count.transactions` and blocks (409) if `> 0` — **but does not check `StockAssignment.targetDeviceNumber` usage**, so a unit could still be referenced there and get deleted anyway. Hard delete.
@@ -69,13 +69,23 @@ Admin-only (unlike transaction import). Multipart `file` only. Header mapping: `
 ## Admin
 
 ### `GET/POST /api/admin/users`
-Admin-only (`role !== "admin"` → 403 — note the stricter `!==` check vs. the `=== "customer"` pattern used elsewhere).
-- **POST**: body `{ customerAccount, customerName, password, role }`, all required; 409 if account exists. Runs a `$transaction` that `upsert`s the `Customer` (⚠️ this **overwrites `customerName`** on an existing `Customer` even if a different name than before is submitted) then creates the `User`. `role` is not validated against an enum — any string is stored as-is.
+Admin-only (`role !== "admin"` → 403).
+- **POST**: body `{ username, customerAccount, password, role }`, all required. 409 if **`username`** already exists (`username` is the unique login identity — `customerAccount` is not, since 2026-07-05). **Since 2026-07-05, `customerAccount` must already exist** — looked up via `prisma.customer.findUnique`, 404 `"Customer not found — create it on the Customers page first"` if not. Customers are no longer created implicitly from this route (see `/api/admin/customers` below); `customerName` is looked up from the existing `Customer` row for the response, not accepted in the request body at all. **`role: "admin"` is capped at one account system-wide**: if any `User` already has `role === "admin"`, a second admin request 409s with `"Only one admin account is allowed"`. `"customer"`/`"customer_user"` have no such cap — any number of each is allowed per `customerAccount`; passing an existing `customerAccount` with a new `username` is the supported way to add a second login (typically `role: "customer_user"`) to a tenant that already has one. Beyond the admin cap, `role` is not validated against an enum — any string is stored as-is (convention: `"customer"` | `"customer_user"` | `"admin"`).
 
 ### `PATCH/DELETE /api/admin/users/[id]`
 Admin-only.
-- **PATCH**: partial update (`customerName?`, `password?` re-hashed, `role?`); if none provided, the transaction array is empty (silent no-op) and the unchanged user is returned.
-- **DELETE**: hard delete; blocks self-deletion (`400` if target account === caller's own). Does **not** delete the associated `Customer` row (can orphan it). Returns `{ ok: true }` — the one route using `ok` instead of `success`.
+- **PATCH**: partial update, body `{ password?, role? }` — **no longer accepts `customerName`** (since 2026-07-05; renaming a company now only happens via `/api/admin/customers/[id]`, since one `customerAccount` can have several `User` rows and letting any of them rename the shared tenant was judged too risky to keep). If neither field is provided, it's a silent no-op and the unchanged user is returned. **Promoting a user to `role: "admin"` is blocked (409)** if a *different* `User` already has that role — checked via `findFirst({ role: "admin", NOT: { id } })` so editing the existing admin's own other fields doesn't trip it. `UsersTab` also disables the "Admin" role button client-side once another admin already exists, showing whose account is holding it.
+- **DELETE**: hard delete. Rejects deleting any `role: "admin"` user outright (400 `"Admin accounts cannot be deleted"`, checked before the self-deletion check) — since only an admin can promote someone else to admin and the role is capped at one, allowing deletion would risk locking everyone out of `/users`/`/api-keys`/`/units`/`/customers`. Also blocks self-deletion by comparing `User.id` (not `customerAccount`, since that's no longer unique to one login) against the caller's session — relevant for non-admin roles. Does **not** delete the associated `Customer` row. Returns `{ ok: true }` — the one route using `ok` instead of `success`.
+
+### `GET/POST /api/admin/customers`
+Admin-only (`role !== "admin"` → 403). Added 2026-07-05 as the dedicated place to manage tenants, now that `/api/admin/users` no longer creates or renames a `Customer` implicitly.
+- **GET**: returns every `Customer` with `{ id, customerAccount, customerName, createdAt, userCount, unitCount, transactionCount, apiKeyCount }` (the four counts are `_count` of the respective relations) — used by `CustomersTab` to decide whether Delete is allowed.
+- **POST**: body `{ customerAccount, customerName }`, both required; 409 if `customerAccount` already exists. Plain `create` (no upsert) — this is now the *only* way to create a new tenant.
+
+### `PATCH/DELETE /api/admin/customers/[id]`
+Admin-only.
+- **PATCH**: body `{ customerName }`, required. `customerAccount` is immutable (consistent with every other identifier field in this app — Device Number, Username, etc.).
+- **DELETE**: blocked (409) with a message listing which counts are non-zero if the customer has any linked `User`, `Unit`, `Transaction`, or `ApiKey` rows — mirrors the `_count.transactions` guard pattern already used by `DELETE /api/units/[id]`. Otherwise hard delete.
 
 ### `GET/POST /api/admin/api-keys`
 Admin-only.

@@ -25,7 +25,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const tx = assignment.stockTransaction
   if (
-    session.user.role === "customer" &&
+    session.user.role !== "admin" &&
     tx.customerAccount !== session.user.customerAccount
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
@@ -87,7 +87,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: "Assignment not found" }, { status: 404 })
   }
   if (
-    session.user.role === "customer" &&
+    session.user.role !== "admin" &&
     assignment.stockTransaction.customerAccount !== session.user.customerAccount
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })

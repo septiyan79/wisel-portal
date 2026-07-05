@@ -102,7 +102,7 @@ export async function POST(req: Request) {
   })
 
   const resolvedAccount =
-    session.user.role !== "customer" && customerAccountOverride
+    session.user.role === "admin" && customerAccountOverride
       ? customerAccountOverride
       : session.user.customerAccount
 

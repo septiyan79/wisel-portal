@@ -6,7 +6,7 @@ import { randomBytes } from "crypto"
 export async function GET() {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  if (session.user.role === "customer") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  if (session.user.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const keys = await prisma.apiKey.findMany({
     orderBy: { createdAt: "desc" },
@@ -27,7 +27,7 @@ export async function GET() {
 export async function POST(req: Request) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  if (session.user.role === "customer") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  if (session.user.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { customerAccount, label } = await req.json()
   if (!customerAccount || !label) {
