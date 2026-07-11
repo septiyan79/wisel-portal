@@ -6,7 +6,8 @@
 |---|---|---|
 | `/` | `app/page.tsx` | Server component, body is just `redirect("/login")` — not the marketing page. |
 | `/landing` | `app/landing/page.tsx` | The actual public marketing homepage. Static/presentational, no auth, no Prisma. Composes `Topbar → Header → Hero → Categories → Banner → Careers → Resources → StoreLocation → Newsletter → Footer` from `components/landing/*`, all driven by static copy in `data/home.ts` / `data/footer.ts`. Login page links back here ("Back to Home"). |
-| `/login` | `app/(auth)/login/page.tsx` | Client component. Calls NextAuth `signIn("credentials", { username, password, redirect: false })` then `router.push("/dashboard")`. No Prisma (delegated to `lib/auth.ts`). Field was renamed from `customerAccount` on 2026-07-05 — existing accounts' `username` was backfilled to their old `customerAccount` value, so old credentials still work. |
+| `/login` | `app/(auth)/login/page.tsx` | Client component. Calls NextAuth `signIn("credentials", { username, password, redirect: false })` then `router.push("/dashboard")`. No Prisma (delegated to `lib/auth.ts`). Field was renamed from `customerAccount` on 2026-07-05 — existing accounts' `username` was backfilled to their old `customerAccount` value, so old credentials still work. Links to `/forgot-password` ("Forgot password?"). |
+| `/forgot-password` | `app/(auth)/forgot-password/page.tsx` | Added 2026-07-05. Server component, fully static — no form, no Prisma. There's no email/phone on `User` to support a real reset flow, so this just tells the user to contact their admin (who can reset any password via `UsersTab`/`PATCH /api/admin/users/[id]`) and links back to `/login`. |
 
 `app/layout.tsx` is the root layout for both trees (fonts, metadata) — no auth logic.
 

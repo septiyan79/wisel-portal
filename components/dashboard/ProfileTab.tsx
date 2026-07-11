@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { User, Building2, Save, CheckCircle } from "lucide-react"
+import { User, Building2, Save, CheckCircle, Loader2 } from "lucide-react"
 
 interface ProfileTabProps {
   customerAccount: string
@@ -10,11 +10,41 @@ interface ProfileTabProps {
 }
 
 export function ProfileTab({ customerAccount, customerName, role }: ProfileTabProps) {
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
 
-  const handleSave = () => {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault()
+    setError("")
+
+    if (newPassword !== confirmPassword) {
+      setError("New password and confirmation do not match")
+      return
+    }
+
+    setLoading(true)
+    try {
+      const res = await fetch("/api/profile/password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error ?? "Failed to change password"); return }
+      setCurrentPassword("")
+      setNewPassword("")
+      setConfirmPassword("")
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch {
+      setError("Network error")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -23,7 +53,7 @@ export function ProfileTab({ customerAccount, customerName, role }: ProfileTabPr
       {saved && (
         <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-xl flex items-center gap-2">
           <CheckCircle size={15} />
-          Profile saved successfully
+          Password changed successfully
         </div>
       )}
 
@@ -79,24 +109,56 @@ export function ProfileTab({ customerAccount, customerName, role }: ProfileTabPr
       {/* Ganti password */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
         <h3 className="font-bold text-gray-900 mb-4 text-sm">Account Security</h3>
-        <div className="space-y-3">
-          {["Current Password", "New Password", "Confirm New Password"].map((label) => (
-            <div key={label}>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">{label}</label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
+        <form onSubmit={handleChangePassword} className="space-y-3">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+              {error}
             </div>
-          ))}
-        </div>
-        <button
-          onClick={handleSave}
-          className="mt-4 flex items-center gap-2 bg-[#367C2B] hover:bg-[#2d6423] text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors"
-        >
-          <Save size={14} /> Change Password
-        </button>
+          )}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Current Password</label>
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1.5">New Password</label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Min. 6 characters"
+              required
+              minLength={6}
+              className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Confirm New Password</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              minLength={6}
+              className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex items-center gap-2 bg-[#367C2B] hover:bg-[#2d6423] disabled:opacity-60 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors"
+          >
+            {loading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+            Change Password
+          </button>
+        </form>
       </div>
     </div>
   )

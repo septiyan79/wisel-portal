@@ -17,7 +17,9 @@
 
 ```
 app/
-├── (auth)/login/page.tsx              ← public sign-in form
+├── (auth)/
+│   ├── login/page.tsx                  ← public sign-in form
+│   └── forgot-password/page.tsx        ← static "contact your admin" info page (added 2026-07-05)
 ├── (dashboard)/                        ← everything behind the auth guard
 │   ├── layout.tsx                      ← auth guard + navbar + chat bubble
 │   ├── dashboard/page.tsx              ← Power BI iframe landing page

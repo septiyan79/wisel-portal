@@ -7,6 +7,11 @@ Two auth mechanisms are used, never combined in one route: **session** (`auth()`
 ### `app/api/auth/[...nextauth]/route.ts`
 `GET`, `POST` — direct re-export of NextAuth `handlers`. No custom code; all logic lives in `lib/auth.ts` (Credentials provider — login field is `username`, not `customerAccount`; JWT session shape `{id, username, role, customerAccount, customerName}`).
 
+## Profile
+
+### `PATCH /api/profile/password`
+Added 2026-07-05 — self-service password change, any authenticated role (`customer`/`customer_user`/`admin`). Auth: session required; **no role check, and none needed** — it always targets `session.user.id`, never a param, so there is no way to change anyone else's password through this route. Body: `{ currentPassword, newPassword }`, both required; 400 if `newPassword.length < 6`; 400 `"Current password is incorrect"` if `bcrypt.compare(currentPassword, user.password)` fails. Wired up to `ProfileTab`'s "Account Security" form. This is the *only* self-service password path in the app — there's no email/phone on `User` to support an emailed-link or OTP reset flow (see [database.md](database.md)), so `/forgot-password` (public page, not an API route) just instructs the user to ask an admin to reset it via `PATCH /api/admin/users/[id]`.
+
 ## Chat
 
 ### `POST /api/chat`
