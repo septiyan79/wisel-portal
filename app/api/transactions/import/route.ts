@@ -9,22 +9,31 @@ import { validateUnitOwnership } from "@/lib/unit-validation"
 // karena Unit.customerAccount wajib diisi tapi unit ini bukan milik satu customer tertentu.
 const SYSTEM_STOCK_DEVICE = "WSL-000039232"
 
+// ── Feature flags ────────────────────────────────────────────────────────────
+//
+// Set ke `true` untuk menonaktifkan pengecekan kepemilikan device per customer.
+// Berguna saat data awal belum sepenuhnya terhubung ke customer yang benar.
+// Kembalikan ke `false` untuk mengaktifkan kembali validasi kepemilikan.
+//
+const SKIP_CUSTOMER_OWNERSHIP_CHECK = true
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Kolom yang diharapkan (case-insensitive, trimmed)
 const COL_MAP: Record<string, string> = {
-  "so number":         "soNumber",
-  "quotation":         "quotation",
-  "po number":         "poNumber",
-  "part number":       "partNumber",
-  "ax part number":    "axPartNumber",
-  "nama part":         "partName",
-  "category":          "category",
-  "qty":               "qty",
-  "invoice date":      "invoiceDate",
+  "so number": "soNumber",
+  "quotation": "quotation",
+  "po number": "poNumber",
+  "part number": "partNumber",
+  "ax part number": "axPartNumber",
+  "nama part": "partName",
+  "category": "category",
+  "qty": "qty",
+  "invoice date": "invoiceDate",
   "packing slip date": "packingSlipDate",
-  "harga satuan":      "unitPrice",
-  "total harga":       "totalPrice",
+  "harga satuan": "unitPrice",
+  "total harga": "totalPrice",
   "no. unit / device": "deviceNumber",
-  "device number":     "deviceNumber",
+  "device number": "deviceNumber",
 }
 
 function normalizeHeader(h: unknown): string {
@@ -106,65 +115,96 @@ export async function POST(req: Request) {
       ? customerAccountOverride
       : session.user.customerAccount
 
-  let success = 0
+  // ── Fase 1: Validasi semua baris — tidak ada yang disimpan dulu ──────────
+  //
+  // Jika ada satu baris yang gagal validasi, seluruh import dibatalkan.
+  // Ini memastikan data yang masuk ke DB selalu konsisten/lengkap.
+
+  type RowPayload = Parameters<typeof prisma.transaction.create>[0]["data"]
+
   const errors: { row: number; message: string }[] = []
+  const payloads: RowPayload[] = []
 
   for (let i = 0; i < normalized.length; i++) {
     const row = normalized[i]
     const rowNum = i + 2 // baris 1 = header
 
-    try {
-      const rawCategory = normalizeCategory(row.category)
-      const rawDevice   = row.deviceNumber ? String(row.deviceNumber).trim() : null
+    const rawCategory = normalizeCategory(row.category)
+    const rawDevice = row.deviceNumber ? String(row.deviceNumber).trim() : null
 
-      if (row.category && !rawCategory) {
-        errors.push({ row: rowNum, message: `Category "${row.category}" tidak dikenali (gunakan PM, Repair, atau Stock)` })
-        continue
-      }
+    if (row.category && !rawCategory) {
+      errors.push({ row: rowNum, message: `Category "${row.category}" tidak dikenali (gunakan PM, Repair, atau Stock)` })
+      continue
+    }
 
-      // Transaksi stock: deviceNumber otomatis ke bucket stok generik
-      const deviceNumber = rawCategory === "S" && !rawDevice ? SYSTEM_STOCK_DEVICE : rawDevice
+    // Transaksi stock: deviceNumber otomatis ke bucket stok generik
+    const deviceNumber = rawCategory === "S" && !rawDevice ? SYSTEM_STOCK_DEVICE : rawDevice
 
-      // Pastikan unit ada dan milik customer yang sama (kecuali bucket stok generik)
-      if (deviceNumber && deviceNumber !== SYSTEM_STOCK_DEVICE) {
-        const error = await validateUnitOwnership(deviceNumber, resolvedAccount)
-        if (error) {
-          errors.push({ row: rowNum, message: error })
-          continue
-        }
-      } else if (deviceNumber === SYSTEM_STOCK_DEVICE) {
+    // Validasi device number
+    if (deviceNumber && deviceNumber !== SYSTEM_STOCK_DEVICE) {
+      if (SKIP_CUSTOMER_OWNERSHIP_CHECK) {
+        // Hanya cek keberadaan unit, lewati cek kepemilikan customer
         const unit = await prisma.unit.findUnique({ where: { deviceNumber } })
         if (!unit) {
           errors.push({ row: rowNum, message: `Device Number "${deviceNumber}" tidak ditemukan di master unit` })
           continue
         }
+      } else {
+        // Cek keberadaan unit SEKALIGUS kepemilikan customer
+        const ownershipError = await validateUnitOwnership(deviceNumber, resolvedAccount)
+        if (ownershipError) {
+          errors.push({ row: rowNum, message: ownershipError })
+          continue
+        }
       }
-
-      await prisma.transaction.create({
-        data: {
-          source:          "import",
-          customerAccount: resolvedAccount,
-          soNumber:        row.soNumber     ? String(row.soNumber).trim()     : null,
-          quotation:       row.quotation    ? String(row.quotation).trim()    : null,
-          poNumber:        row.poNumber     ? String(row.poNumber).trim()     : null,
-          partNumber:      row.partNumber   ? String(row.partNumber).trim()   : null,
-          axPartNumber:    row.axPartNumber ? String(row.axPartNumber).trim() : null,
-          partName:        row.partName     ? String(row.partName).trim()     : null,
-          category:        rawCategory,
-          qty:             row.qty          ? Number(row.qty)                 : null,
-          invoiceDate:     parseDate(row.invoiceDate)     ? new Date(parseDate(row.invoiceDate)!)     : null,
-          packingSlipDate: parseDate(row.packingSlipDate) ? new Date(parseDate(row.packingSlipDate)!) : null,
-          unitPrice:       row.unitPrice    ? Number(row.unitPrice)           : null,
-          totalPrice:      row.totalPrice   ? Number(row.totalPrice)          : null,
-          deviceNumber,
-        },
-      })
-      success++
-    } catch {
-      errors.push({ row: rowNum, message: "Gagal menyimpan baris ini" })
+    } else if (deviceNumber === SYSTEM_STOCK_DEVICE) {
+      const unit = await prisma.unit.findUnique({ where: { deviceNumber } })
+      if (!unit) {
+        errors.push({ row: rowNum, message: `Device Number "${deviceNumber}" tidak ditemukan di master unit` })
+        continue
+      }
     }
+
+    payloads.push({
+      source: "import",
+      customerAccount: resolvedAccount,
+      soNumber: row.soNumber ? String(row.soNumber).trim() : null,
+      quotation: row.quotation ? String(row.quotation).trim() : null,
+      poNumber: row.poNumber ? String(row.poNumber).trim() : null,
+      partNumber: row.partNumber ? String(row.partNumber).trim() : null,
+      axPartNumber: row.axPartNumber ? String(row.axPartNumber).trim() : null,
+      partName: row.partName ? String(row.partName).trim() : null,
+      category: rawCategory,
+      qty: row.qty ? Number(row.qty) : null,
+      invoiceDate: parseDate(row.invoiceDate) ? new Date(parseDate(row.invoiceDate)!) : null,
+      packingSlipDate: parseDate(row.packingSlipDate) ? new Date(parseDate(row.packingSlipDate)!) : null,
+      unitPrice: row.unitPrice ? Number(row.unitPrice) : null,
+      totalPrice: row.totalPrice ? Number(row.totalPrice) : null,
+      deviceNumber,
+    })
   }
 
-  if (success > 0) void exportToSheets()
-  return NextResponse.json({ success, errors, total: rows.length })
+  // Jika ada baris yang gagal validasi, batalkan seluruh import
+  if (errors.length > 0) {
+    return NextResponse.json({ success: 0, errors, total: rows.length })
+  }
+
+  // ── Fase 2: Simpan semua baris dalam satu DB transaction ─────────────────
+  //
+  // Jika terjadi error DB di tengah jalan, semua insert di-rollback otomatis.
+
+  try {
+    await prisma.$transaction(
+      payloads.map((data) => prisma.transaction.create({ data }))
+    )
+  } catch {
+    return NextResponse.json({
+      success: 0,
+      errors: [{ row: 0, message: "Gagal menyimpan ke database. Tidak ada data yang diimport." }],
+      total: rows.length,
+    })
+  }
+
+  void exportToSheets()
+  return NextResponse.json({ success: payloads.length, errors: [], total: rows.length })
 }

@@ -74,9 +74,8 @@ export function DashboardNavbar({ customerAccount, customerName, role }: Dashboa
                 <div key={item.id}>
                   <button
                     onClick={() => setMobileExpanded(mobileExpanded === item.id ? null : item.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-semibold transition-colors ${
-                      isActive ? "bg-[#367C2B]/10 text-[#367C2B]" : "text-gray-600 hover:bg-gray-50"
-                    }`}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-semibold transition-colors ${isActive ? "bg-[#367C2B]/10 text-[#367C2B]" : "text-gray-600 hover:bg-gray-50"
+                      }`}
                   >
                     <item.icon size={16} />
                     {item.label}
@@ -92,11 +91,10 @@ export function DashboardNavbar({ customerAccount, customerName, role }: Dashboa
                           key={child.id}
                           href={child.href}
                           onClick={() => setNavSlideOpen(false)}
-                          className={`flex items-center px-3 py-2 rounded text-sm font-semibold transition-colors ${
-                            pathname === child.href
-                              ? "text-[#367C2B] bg-[#367C2B]/5"
-                              : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
-                          }`}
+                          className={`flex items-center px-3 py-2 rounded text-sm font-semibold transition-colors ${pathname === child.href
+                            ? "text-[#367C2B] bg-[#367C2B]/5"
+                            : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+                            }`}
                         >
                           {child.label}
                         </Link>
@@ -111,11 +109,10 @@ export function DashboardNavbar({ customerAccount, customerName, role }: Dashboa
                 key={item.id}
                 href={item.href}
                 onClick={() => setNavSlideOpen(false)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-semibold transition-colors ${
-                  isActive
-                    ? "bg-[#367C2B]/10 text-[#367C2B]"
-                    : "text-gray-600 hover:bg-gray-50"
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-semibold transition-colors ${isActive
+                  ? "bg-[#367C2B]/10 text-[#367C2B]"
+                  : "text-gray-600 hover:bg-gray-50"
+                  }`}
               >
                 <item.icon size={16} />
                 {item.label}
@@ -208,11 +205,10 @@ export function DashboardNavbar({ customerAccount, customerName, role }: Dashboa
                     >
                       <Link
                         href={item.href}
-                        className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors border-b-2 ${
-                          isActive
-                            ? "border-[#367C2B] text-[#367C2B]"
-                            : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
-                        }`}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors border-b-2 ${isActive
+                          ? "border-[#367C2B] text-[#367C2B]"
+                          : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
+                          }`}
                       >
                         <item.icon size={15} />
                         {item.label}
@@ -227,11 +223,10 @@ export function DashboardNavbar({ customerAccount, customerName, role }: Dashboa
                             <Link
                               key={child.id}
                               href={child.href}
-                              className={`flex items-center px-4 py-2.5 text-sm font-semibold transition-colors ${
-                                pathname === child.href
-                                  ? "text-[#367C2B] bg-[#367C2B]/5"
-                                  : "text-gray-700 hover:bg-gray-50"
-                              }`}
+                              className={`flex items-center px-4 py-2.5 text-sm font-semibold transition-colors ${pathname === child.href
+                                ? "text-[#367C2B] bg-[#367C2B]/5"
+                                : "text-gray-700 hover:bg-gray-50"
+                                }`}
                             >
                               {child.label}
                             </Link>
@@ -245,11 +240,10 @@ export function DashboardNavbar({ customerAccount, customerName, role }: Dashboa
                   <Link
                     key={item.id}
                     href={item.href}
-                    className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors border-b-2 ${
-                      isActive
-                        ? "border-[#367C2B] text-[#367C2B]"
-                        : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors border-b-2 ${isActive
+                      ? "border-[#367C2B] text-[#367C2B]"
+                      : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
+                      }`}
                   >
                     <item.icon size={15} />
                     {item.label}
@@ -317,7 +311,7 @@ export function DashboardNavbar({ customerAccount, customerName, role }: Dashboa
         </div>
 
         {/* ── Secondary bar ── */}
-        <div className="bg-[#3d3d3d] px-4 md:px-6 py-2.5 md:py-4 flex items-center gap-4">
+        <div className="bg-[#800000] px-4 md:px-6 py-2.5 md:py-4 flex items-center gap-4">
 
           {/* New Part Search — mobile left */}
           <a href="https://partscatalog.deere.com/jdrc/" target="_blank" rel="noopener noreferrer" className="md:hidden flex items-center gap-2 border-0 md:border-2 border-white text-white text-sm font-semibold px-3 py-1 hover:bg-white/10 transition-colors">
