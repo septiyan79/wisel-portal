@@ -46,6 +46,7 @@ const CATEGORY_MAP: Record<string, string> = {
   P: "P", PM: "P",
   R: "R", REPAIR: "R",
   S: "S", STOCK: "S",
+  D: "D", DJI: "D",
 }
 
 function normalizeCategory(val: unknown): string | null {
