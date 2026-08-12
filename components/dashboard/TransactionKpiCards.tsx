@@ -35,15 +35,18 @@ export async function TransactionKpiCards({ role, customerAccount, extraCard }: 
 
   let totalPM = 0, totalPMPrice = 0
   let totalRepair = 0, totalRepairPrice = 0
+  let totalDJI = 0, totalDJIPrice = 0
 
   for (const t of raw) {
-    if (t.category === "P") { totalPM++;     totalPMPrice     += t.totalPrice ?? 0 }
+    if (t.category === "P") { totalPM++; totalPMPrice += t.totalPrice ?? 0 }
     if (t.category === "R") { totalRepair++; totalRepairPrice += t.totalPrice ?? 0 }
+    if (t.category === "D") { totalDJI++; totalDJIPrice += t.totalPrice ?? 0 }
   }
   for (const a of rawAssignments) {
     const price = a.stockTransaction.unitPrice != null ? a.qty * a.stockTransaction.unitPrice : 0
-    if (a.category === "P") { totalPM++;     totalPMPrice     += price }
-    else                    { totalRepair++; totalRepairPrice += price }
+    if (a.category === "P") { totalPM++; totalPMPrice += price }
+    if (a.category === "D") { totalDJI++; totalDJIPrice += price }
+    else if (a.category !== "P") { totalRepair++; totalRepairPrice += price }
   }
 
   let stockRemainingCount = 0, stockRemainingPrice = 0
@@ -56,11 +59,11 @@ export async function TransactionKpiCards({ role, customerAccount, extraCard }: 
     }
   }
 
-  const totalCount    = totalPM + totalRepair + stockRemainingCount
-  const totalAllPrice = totalPMPrice + totalRepairPrice + stockRemainingPrice
+  const totalCount = totalPM + totalRepair + totalDJI + stockRemainingCount
+  const totalAllPrice = totalPMPrice + totalRepairPrice + totalDJIPrice + stockRemainingPrice
 
   return (
-    <div className={`grid grid-cols-2 gap-3 mb-5 ${extraCard ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}>
+    <div className={`grid grid-cols-2 gap-3 mb-5 ${extraCard ? "sm:grid-cols-5" : "sm:grid-cols-4"}`}>
       {extraCard}
       <div className="bg-blue-50 rounded-xl p-4 border border-gray-100">
         <span className="inline-block text-[11px] font-bold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full mb-2">
@@ -78,12 +81,20 @@ export async function TransactionKpiCards({ role, customerAccount, extraCard }: 
         <p className="text-xs text-gray-500 mt-0.5">Repair Transactions</p>
       </div>
 
+      <div className="bg-violet-50 rounded-xl p-4 border border-gray-100">
+        <span className="inline-block text-[11px] font-bold bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full mb-2">
+          {totalDJI.toLocaleString("id-ID")} tx
+        </span>
+        <p className="text-lg font-black text-violet-700 truncate">{fmt(totalDJIPrice)}</p>
+        <p className="text-xs text-gray-500 mt-0.5">DJI Transactions</p>
+      </div>
+
       <div className="bg-green-50 rounded-xl p-4 border border-gray-100">
         <span className="inline-block text-[11px] font-bold bg-green-100 text-[#367C2B] px-2 py-0.5 rounded-full mb-2">
           {totalCount.toLocaleString("id-ID")} tx
         </span>
         <p className="text-lg font-black text-[#367C2B] truncate">{fmt(totalAllPrice)}</p>
-        <p className="text-xs text-gray-500 mt-0.5">Total Transactions (PM, Repair and Stock)</p>
+        <p className="text-xs text-gray-500 mt-0.5">Total Transactions (PM, Repair, DJI and Stock)</p>
       </div>
     </div>
   )

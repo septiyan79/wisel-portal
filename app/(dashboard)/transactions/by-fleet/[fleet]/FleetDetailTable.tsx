@@ -23,14 +23,15 @@ function fmtDate(iso: string | null) {
   })
 }
 
-type CategoryCode = "P" | "R" | "M" | "O"
+type CategoryCode = "P" | "R" | "M" | "O" | "D"
 
 function CategoryBadge({ code }: { code: CategoryCode }) {
   const map: Record<CategoryCode, { label: string; cls: string }> = {
-    P: { label: "PM",        cls: "bg-blue-100 text-blue-700" },
-    R: { label: "Repair",    cls: "bg-orange-100 text-orange-600" },
+    P: { label: "PM", cls: "bg-blue-100 text-blue-700" },
+    R: { label: "Repair", cls: "bg-orange-100 text-orange-600" },
     M: { label: "PM+Repair", cls: "bg-purple-100 text-purple-700" },
-    O: { label: "Other",     cls: "bg-gray-100 text-gray-600" },
+    D: { label: "DJI", cls: "bg-violet-100 text-violet-700" },
+    O: { label: "Other", cls: "bg-gray-100 text-gray-600" },
   }
   const { label, cls } = map[code] ?? map.O
   return (
@@ -70,8 +71,8 @@ export default function FleetDetailTable({
   totalCount,
   totalPrice,
 }: Props) {
-  const [search, setSearch]     = useState("")
-  const [page, setPage]         = useState(1)
+  const [search, setSearch] = useState("")
+  const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const { sortCol, sortDir, toggleSort, sortRows } = useSortableTable<SortCol>()
 
@@ -86,10 +87,10 @@ export default function FleetDetailTable({
   })
 
   const sorted = sortRows(filtered, {
-    partNumber:      (a, b) => a.partNumber.localeCompare(b.partNumber),
-    category:        (a, b) => a.category.localeCompare(b.category),
-    qty:             (a, b) => a.qty - b.qty,
-    totalPrice:      (a, b) => a.totalPrice - b.totalPrice,
+    partNumber: (a, b) => a.partNumber.localeCompare(b.partNumber),
+    category: (a, b) => a.category.localeCompare(b.category),
+    qty: (a, b) => a.qty - b.qty,
+    totalPrice: (a, b) => a.totalPrice - b.totalPrice,
     packingSlipDate: (a, b) => (a.packingSlipDate ?? "").localeCompare(b.packingSlipDate ?? ""),
   })
 
@@ -158,11 +159,11 @@ export default function FleetDetailTable({
                 <tr className="border-b border-gray-100 bg-gray-50/60">
                   {(
                     [
-                      { col: "partNumber",      label: "Part Number",       align: "left"  },
-                      { col: "category",         label: "Category",          align: "left"  },
-                      { col: "qty",              label: "Qty",               align: "right" },
-                      { col: "totalPrice",       label: "Price",             align: "right" },
-                      { col: "packingSlipDate",  label: "Packing Slip Date", align: "right" },
+                      { col: "partNumber", label: "Part Number", align: "left" },
+                      { col: "category", label: "Category", align: "left" },
+                      { col: "qty", label: "Qty", align: "right" },
+                      { col: "totalPrice", label: "Price", align: "right" },
+                      { col: "packingSlipDate", label: "Packing Slip Date", align: "right" },
                     ] as { col: SortCol; label: string; align: "left" | "right" }[]
                   ).map(({ col, label, align }) => (
                     <th

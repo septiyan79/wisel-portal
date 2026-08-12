@@ -134,7 +134,7 @@ export async function POST(req: Request) {
     const rawDevice = row.deviceNumber ? String(row.deviceNumber).trim() : null
 
     if (row.category && !rawCategory) {
-      errors.push({ row: rowNum, message: `Category "${row.category}" tidak dikenali (gunakan PM, Repair, atau Stock)` })
+      errors.push({ row: rowNum, message: `Category "${row.category}" tidak dikenali (gunakan PM, Repair, Stock, atau DJI)` })
       continue
     }
 

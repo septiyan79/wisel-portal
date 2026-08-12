@@ -27,7 +27,7 @@ interface ImportResult {
 
 // ── Template definitions ────────────────────────────────────────
 
-// Category hanya menerima: PM, Repair, atau Stock (case-insensitive)
+// Category hanya menerima: PM, Repair, Stock, atau DJI (case-insensitive)
 const TRANSACTION_TEMPLATE = [
   {
     "SO Number": "SO-2025-001",
@@ -176,7 +176,7 @@ export function ImportModal({ type, role, customers = [], onClose, onImported }:
               <p className="text-sm font-semibold text-gray-700">Download Template</p>
               <p className="text-xs text-gray-400 mt-0.5">Use this format to ensure a successful import</p>
               {type === "transactions" && (
-                <p className="text-xs text-gray-400 mt-0.5">Category must be: PM, Repair, or Stock</p>
+                <p className="text-xs text-gray-400 mt-0.5">Category must be: PM, Repair, Stock, or DJI</p>
               )}
               {type === "units" && (
                 <p className="text-xs text-gray-400 mt-0.5">Customer Account must match an existing customer</p>
@@ -216,13 +216,12 @@ export function ImportModal({ type, role, customers = [], onClose, onImported }:
             onDragLeave={() => setDragging(false)}
             onDrop={onDrop}
             onClick={() => fileRef.current?.click()}
-            className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-              dragging
+            className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${dragging
                 ? "border-[#367C2B] bg-green-50"
                 : file
                   ? "border-green-400 bg-green-50"
                   : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-            }`}
+              }`}
           >
             <input
               ref={fileRef}

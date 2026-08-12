@@ -18,6 +18,7 @@ const CATEGORY_MAP: Record<string, string> = {
   P: "PM",
   R: "Repair",
   S: "Stock",
+  D: "DJI",
 }
 
 function fmtCategory(value: string | null | undefined) {
@@ -32,19 +33,19 @@ function fmtDate(iso: string | null | undefined) {
 
 export function OrderDetailModal({ transaction: t, onClose }: OrderDetailModalProps) {
   const rows = [
-    { label: "SO Number",         value: t.soNumber     ?? "—", mono: true  },
-    { label: "Part Number",       value: t.partNumber   ?? "—", mono: true  },
-    { label: "Wisel Part No.",    value: t.axPartNumber ?? "—", mono: true  },
-    { label: "Part Name",         value: t.partName     ?? "—", mono: false },
-    { label: "Qty",               value: t.qty != null ? `${t.qty} pcs` : "—", mono: false },
-    { label: "Category",          value: fmtCategory(t.category),    mono: false },
-    { label: "Unit Price",        value: fmt(t.unitPrice),           mono: false },
-    { label: "Total Price",       value: fmt(t.totalPrice),          mono: false },
-    { label: "Invoice Date",      value: fmtDate(t.invoiceDate),     mono: false },
+    { label: "SO Number", value: t.soNumber ?? "—", mono: true },
+    { label: "Part Number", value: t.partNumber ?? "—", mono: true },
+    { label: "Wisel Part No.", value: t.axPartNumber ?? "—", mono: true },
+    { label: "Part Name", value: t.partName ?? "—", mono: false },
+    { label: "Qty", value: t.qty != null ? `${t.qty} pcs` : "—", mono: false },
+    { label: "Category", value: fmtCategory(t.category), mono: false },
+    { label: "Unit Price", value: fmt(t.unitPrice), mono: false },
+    { label: "Total Price", value: fmt(t.totalPrice), mono: false },
+    { label: "Invoice Date", value: fmtDate(t.invoiceDate), mono: false },
     { label: "Packing Slip Date", value: fmtDate(t.packingSlipDate), mono: false },
-    { label: "Notes",             value: t.check ?? "—",             mono: false },
-    { label: "Unit No.",          value: t.deviceNumber ?? "—", mono: true  },
-    { label: "Customer Account",  value: t.customerAccount ?? "—", mono: true },
+    { label: "Notes", value: t.check ?? "—", mono: false },
+    { label: "Unit No.", value: t.deviceNumber ?? "—", mono: true },
+    { label: "Customer Account", value: t.customerAccount ?? "—", mono: true },
   ]
 
   return (

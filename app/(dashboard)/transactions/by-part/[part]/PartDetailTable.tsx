@@ -23,14 +23,15 @@ function fmtDate(iso: string | null) {
   })
 }
 
-type CategoryCode = "P" | "R" | "S" | "O"
+type CategoryCode = "P" | "R" | "S" | "O" | "D"
 
 function CategoryBadge({ code }: { code: CategoryCode }) {
   const map: Record<CategoryCode, { label: string; cls: string }> = {
-    P: { label: "PM",     cls: "bg-blue-100 text-blue-700" },
+    P: { label: "PM", cls: "bg-blue-100 text-blue-700" },
     R: { label: "Repair", cls: "bg-orange-100 text-orange-600" },
-    S: { label: "Stock",  cls: "bg-yellow-100 text-yellow-700" },
-    O: { label: "Other",  cls: "bg-gray-100 text-gray-600" },
+    S: { label: "Stock", cls: "bg-yellow-100 text-yellow-700" },
+    D: { label: "DJI", cls: "bg-violet-100 text-violet-700" },
+    O: { label: "Other", cls: "bg-gray-100 text-gray-600" },
   }
   const { label, cls } = map[code]
   return (
@@ -81,10 +82,10 @@ export default function PartDetailTable({
   )
 
   const sorted = sortRows(filtered, {
-    fleetLabel:      (a, b) => a.fleetLabel.localeCompare(b.fleetLabel),
-    category:        (a, b) => a.category.localeCompare(b.category),
-    qty:             (a, b) => a.qty - b.qty,
-    totalPrice:      (a, b) => a.totalPrice - b.totalPrice,
+    fleetLabel: (a, b) => a.fleetLabel.localeCompare(b.fleetLabel),
+    category: (a, b) => a.category.localeCompare(b.category),
+    qty: (a, b) => a.qty - b.qty,
+    totalPrice: (a, b) => a.totalPrice - b.totalPrice,
     packingSlipDate: (a, b) => (a.packingSlipDate ?? "").localeCompare(b.packingSlipDate ?? ""),
   })
 
@@ -153,11 +154,11 @@ export default function PartDetailTable({
                 <tr className="border-b border-gray-100 bg-gray-50/60">
                   {(
                     [
-                      { col: "fleetLabel",      label: "Fleet Number",       align: "left"  },
-                      { col: "category",         label: "Category",           align: "left"  },
-                      { col: "qty",              label: "Qty",                align: "right" },
-                      { col: "totalPrice",       label: "Price",              align: "right" },
-                      { col: "packingSlipDate",  label: "Packing Slip Date",  align: "right" },
+                      { col: "fleetLabel", label: "Fleet Number", align: "left" },
+                      { col: "category", label: "Category", align: "left" },
+                      { col: "qty", label: "Qty", align: "right" },
+                      { col: "totalPrice", label: "Price", align: "right" },
+                      { col: "packingSlipDate", label: "Packing Slip Date", align: "right" },
                     ] as { col: SortCol; label: string; align: "left" | "right" }[]
                   ).map(({ col, label, align }) => (
                     <th

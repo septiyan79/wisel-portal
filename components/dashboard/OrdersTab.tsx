@@ -60,18 +60,18 @@ type SortCol = "soNumber" | "partName" | "category" | "qty" | "totalPrice" | "pa
 
 export function OrdersTab({ transactions, role }: OrdersTabProps) {
   const router = useRouter()
-  const [selected, setSelected]     = useState<TransactionRow | null>(null)
-  const [editing, setEditing]       = useState<TransactionRow | null>(null)
-  const [adding, setAdding]         = useState(false)
+  const [selected, setSelected] = useState<TransactionRow | null>(null)
+  const [editing, setEditing] = useState<TransactionRow | null>(null)
+  const [adding, setAdding] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<TransactionRow | null>(null)
-  const [deleting, setDeleting]     = useState(false)
-  const [importing, setImporting]   = useState(false)
-  const [search, setSearch]         = useState("")
-  const [dateFrom, setDateFrom]     = useState("")
-  const [dateTo, setDateTo]         = useState("")
-  const [page, setPage]             = useState(1)
-  const [pageSize, setPageSize]     = useState(10)
-  const [customers, setCustomers]   = useState<CustomerOption[]>([])
+  const [deleting, setDeleting] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [search, setSearch] = useState("")
+  const [dateFrom, setDateFrom] = useState("")
+  const [dateTo, setDateTo] = useState("")
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [customers, setCustomers] = useState<CustomerOption[]>([])
   const [customerFilter, setCustomerFilter] = useState("")
   const { sortCol, sortDir, toggleSort, sortRows } = useSortableTable<SortCol>()
 
@@ -82,7 +82,7 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
       fetch("/api/customers")
         .then((r) => r.json())
         .then((d: CustomerOption[]) => setCustomers(d))
-        .catch(() => {})
+        .catch(() => { })
     }
   }, [role])
 
@@ -111,13 +111,13 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
   })
 
   const sorted = sortRows(filtered, {
-    soNumber:        (a, b) => (a.soNumber ?? "").localeCompare(b.soNumber ?? ""),
-    partName:        (a, b) => (a.partName ?? a.partNumber ?? "").localeCompare(b.partName ?? b.partNumber ?? ""),
-    category:        (a, b) => (a.category ?? "").localeCompare(b.category ?? ""),
-    qty:             (a, b) => (a.qty ?? 0) - (b.qty ?? 0),
-    totalPrice:      (a, b) => (a.totalPrice ?? 0) - (b.totalPrice ?? 0),
+    soNumber: (a, b) => (a.soNumber ?? "").localeCompare(b.soNumber ?? ""),
+    partName: (a, b) => (a.partName ?? a.partNumber ?? "").localeCompare(b.partName ?? b.partNumber ?? ""),
+    category: (a, b) => (a.category ?? "").localeCompare(b.category ?? ""),
+    qty: (a, b) => (a.qty ?? 0) - (b.qty ?? 0),
+    totalPrice: (a, b) => (a.totalPrice ?? 0) - (b.totalPrice ?? 0),
     packingSlipDate: (a, b) => (a.packingSlipDate ?? "").localeCompare(b.packingSlipDate ?? ""),
-    fleetNumber:     (a, b) => (a.fleetNumber ?? a.deviceNumber ?? "").localeCompare(b.fleetNumber ?? b.deviceNumber ?? ""),
+    fleetNumber: (a, b) => (a.fleetNumber ?? a.deviceNumber ?? "").localeCompare(b.fleetNumber ?? b.deviceNumber ?? ""),
     customerAccount: (a, b) => customerLabel(a.customerAccount).localeCompare(customerLabel(b.customerAccount)),
   })
 
@@ -315,16 +315,16 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
                 <tr className="border-b border-gray-100 bg-gray-50/60">
                   {(
                     [
-                      { col: "soNumber",        label: "SO Number",        cls: "whitespace-nowrap" },
+                      { col: "soNumber", label: "SO Number", cls: "whitespace-nowrap" },
                       ...(role === "admin"
                         ? [{ col: "customerAccount" as SortCol, label: "Customer", cls: "hidden md:table-cell" }]
                         : []),
-                      { col: "partName",         label: "Part",             cls: "" },
-                      { col: "category",         label: "Category",         cls: "hidden sm:table-cell" },
-                      { col: "qty",              label: "Qty",              cls: "" },
-                      { col: "totalPrice",       label: "Total",            cls: "hidden md:table-cell" },
-                      { col: "packingSlipDate",  label: "Packing Slip Date",cls: "hidden lg:table-cell" },
-                      { col: "fleetNumber",      label: "Fleet Number",     cls: "hidden lg:table-cell" },
+                      { col: "partName", label: "Part", cls: "" },
+                      { col: "category", label: "Category", cls: "hidden sm:table-cell" },
+                      { col: "qty", label: "Qty", cls: "" },
+                      { col: "totalPrice", label: "Total", cls: "hidden md:table-cell" },
+                      { col: "packingSlipDate", label: "Packing Slip Date", cls: "hidden lg:table-cell" },
+                      { col: "fleetNumber", label: "Fleet Number", cls: "hidden lg:table-cell" },
                     ] as { col: SortCol; label: string; cls: string }[]
                   ).map(({ col, label, cls }) => (
                     <th
@@ -372,6 +372,7 @@ export function OrdersTab({ transactions, role }: OrdersTabProps) {
                       {t.category === "P" && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">PM</span>}
                       {t.category === "R" && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-600">Repair</span>}
                       {t.category === "S" && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Stock</span>}
+                      {t.category === "D" && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">DJI</span>}
                       {!t.category && <span className="text-xs text-gray-300">—</span>}
                     </td>
                     <td className="px-5 py-4 text-sm text-gray-600">
